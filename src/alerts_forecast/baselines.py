@@ -26,6 +26,22 @@ def hour_of_week_rate(train: pd.DataFrame, test: pd.DataFrame, horizon_h: int) -
     return mapped.fillna(train["y"].mean()).to_numpy()
 
 
+def make_smoothed_hour_of_week(k: float):
+    """POST-HOC baseline (added after the first test results were seen).
+
+    Slot mean pulled to the training base rate: (sum_y + k * base) / (n + k). Rows of one slot are
+    strongly correlated (4 per hour, one day at a time), so the useful k is large; chosen on validation.
+    """
+
+    def fit_predict(train: pd.DataFrame, test: pd.DataFrame, horizon_h: int) -> np.ndarray:
+        base = train["y"].mean()
+        stats = pd.Series(train["y"].to_numpy(float)).groupby(kyiv_hour_of_week(train.index)).agg(["sum", "count"])
+        slot_rate = (stats["sum"] + k * base) / (stats["count"] + k)
+        return pd.Series(kyiv_hour_of_week(test.index)).map(slot_rate).fillna(base).to_numpy()
+
+    return fit_predict
+
+
 def recent_activity_rate(train: pd.DataFrame, test: pd.DataFrame, horizon_h: int) -> np.ndarray:
     """Persistence: label rate after 'an alert ended within the last H hours' vs otherwise.
 

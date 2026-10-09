@@ -76,12 +76,13 @@ def test_hour_of_week_follows_kyiv_wall_clock_across_dst():
 
 
 def test_hour_of_week_baseline_uses_same_slot_mean():
-    idx = pd.DatetimeIndex(
-        [pd.Timestamp("2026-03-02 10:00", tz="UTC") + pd.Timedelta(days=7 * k) for k in range(4)]
-    )
-    train = pd.DataFrame({"y": [1, 1, 0, 0], "minutes_since_last_end": 100.0}, index=idx)
-    test = pd.DataFrame({"y": [0], "minutes_since_last_end": 100.0}, index=idx[:1] + pd.Timedelta(days=28))
-    assert hour_of_week_rate(train, test, 3).tolist() == [0.5]
+    # January: no summer-time switch. Monday 10:00 UTC rows are [1, 1, 0, 1]; another slot holds zeros,
+    # so the global mean (0.375) differs from the slot mean (0.75) and a wrong slot would be noticed.
+    mon = [pd.Timestamp("2026-01-05 10:00", tz="UTC") + pd.Timedelta(days=7 * k) for k in range(4)]
+    tue = [pd.Timestamp("2026-01-06 10:00", tz="UTC") + pd.Timedelta(days=7 * k) for k in range(4)]
+    train = pd.DataFrame({"y": [1, 1, 0, 1, 0, 0, 0, 0], "minutes_since_last_end": 100.0}, index=pd.DatetimeIndex(mon + tue))
+    test = pd.DataFrame({"y": [0], "minutes_since_last_end": 100.0}, index=pd.DatetimeIndex([mon[0] + pd.Timedelta(days=28)]))
+    assert hour_of_week_rate(train, test, 3).tolist() == [0.75]
 
 
 def test_recent_activity_splits_by_minutes_since_end():
@@ -112,3 +113,30 @@ def test_bootstrap_resamples_whole_days_and_is_reproducible():
     assert brier_good.lo <= brier_good.value <= brier_good.hi
     diff = d1[d1.metric == "brier"].iloc[0]
     assert diff.hi < 0 and diff.share_better == 1.0  # a perfect-ish model clearly beats a flat one
+
+
+def test_smoothed_hour_of_week_moves_from_slot_mean_to_base_rate():
+    from alerts_forecast.baselines import make_smoothed_hour_of_week
+
+    idx = pd.DatetimeIndex(
+        [pd.Timestamp("2026-01-05 10:00", tz="UTC") + pd.Timedelta(days=7 * k) for k in range(4)]
+        + [pd.Timestamp("2026-01-06 10:00", tz="UTC") + pd.Timedelta(days=7 * k) for k in range(4)]
+    )
+    train = pd.DataFrame({"y": [1, 1, 1, 1, 0, 0, 0, 0], "minutes_since_last_end": 100.0}, index=idx)
+    test = pd.DataFrame({"y": 0, "minutes_since_last_end": 100.0}, index=idx[:1] + pd.Timedelta(days=28))
+    assert make_smoothed_hour_of_week(0)(train, test, 3).tolist() == [1.0]  # no smoothing: slot mean
+    assert abs(make_smoothed_hour_of_week(4)(train, test, 3)[0] - (4 + 4 * 0.5) / 8) < 1e-12  # (sum+k*base)/(n+k)
+    assert abs(make_smoothed_hour_of_week(1e9)(train, test, 3)[0] - 0.5) < 1e-6
+
+
+def test_logreg_fit_predict_uses_only_train_rows_for_fitting():
+    from alerts_forecast.models import make_logreg
+
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=400)
+    df = pd.DataFrame({"x": x, "y": (x + rng.normal(scale=0.5, size=400) > 0)})
+    train, test = df.iloc[:300], df.iloc[300:]
+    p1 = make_logreg(["x"], 1.0)(train, test, 3)
+    flipped = test.assign(y=~test["y"])
+    assert np.allclose(p1, make_logreg(["x"], 1.0)(train, flipped, 3))  # test labels are ignored
+    assert np.corrcoef(p1, test["x"])[0, 1] > 0.9 and p1.min() >= 0 and p1.max() <= 1

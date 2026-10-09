@@ -68,3 +68,28 @@ Template for each entry:
   H=6: positive rate 89%, a constant already gives PR-AUC 0.889, so H=6 carries almost no information.
 - Caveat: I saw these test numbers before deciding anything about the baselines. Any change to a baseline
   (for example smoothing hour_of_week) has to be tuned on the validation block and reported as a post-hoc change.
+
+## 4. Features beyond one oblast, logistic regression, first model results
+- Added features (src/alerts_forecast/features.py): own history (time since last end, starts in 3h/24h/7d, share of last 24h
+  under alert, Kyiv time of day, weekend), 7 neighbours (active flags, starts in 1h/3h, time since their latest start),
+  country-wide (number of oblasts under alert, starts in 1h/3h/24h; Luhanska excluded: permanent siren).
+  Neighbour list is from my memory of the map, not from the data: Chernihivska, Sumska, Kharkivska, Dnipropetrovska,
+  Kirovohradska, Cherkaska, Kyivska. To be checked on a map.
+- Leakage: the same truncation test as before, now over all regions at once. It passes on synthetic and real data and it
+  catches a deliberately leaky "neighbour ends soon" feature. It also found an empty-table bug (a region with no known alert yet).
+- Mistakes in my tests found on the way: a DST date (2026-03-30 is after the 03-29 switch) made a slot test pass by accident,
+  because the expected value equalled the fallback value. Rewritten so the slot mean differs from the global mean.
+- Model: standardised logistic regression, grid C in {0.01, 0.1, 1} x window {365, 180, 90 d}, chosen on validation by Brier.
+  Post-hoc smoothed hour_of_week: k in {25, 100, 400, 1600}.
+- Results (test, last 8 weeks; scripts/run_experiment.py, full output in results/experiment_2026-10-09.txt):
+  - Best baseline (bar): constant rate. The smoothed hour_of_week chose k=1600, the edge of the grid, and equals the constant.
+    So the hour of the week carries no usable signal in these data beyond the base rate (also at H=1, H=6).
+  - H=3: PR-AUC of logreg[own+nbr+cty] 0.727 vs 0.659 for the bar, paired difference +0.069 [0.018, 0.116]. Brier 0.2218 vs 0.2241,
+    paired difference -0.0024 [-0.0096, 0.0040], not distinguishable from zero. On the validation block the logistic regression was
+    NOT better than the constant in Brier (0.2287 vs 0.2256). Verdict: it ranks moments better, it does not give better probabilities.
+  - H=1: PR-AUC 0.352 vs 0.271 for the constant, +0.081 [0.037, 0.123]; Brier difference -0.0020 [-0.0069, 0.0023].
+  - Neighbours alone are not a significant gain over own history (H=3 PR-AUC +0.024 [-0.015, 0.059]); adding country-wide counts is
+    (H=3 PR-AUC +0.015 [0.003, 0.029], Brier -0.0033 [-0.0060, -0.0007] vs own+nbr; H=6 also). The user's guess about nationwide activity was right, about neighbours it is not proven.
+  - The best C was the smallest of the grid (0.01) for every set: the grid is cut at the edge. To extend downward, chosen on validation.
+- Caveats: many comparisons were printed (3 horizons, 3 feature sets, 2 references); only H=3 vs the best baseline was the planned comparison, the rest is exploratory.
+  Coefficients with C=0.01 are heavily shrunk, a negative coefficient of Sumska is not to be read as a cause.

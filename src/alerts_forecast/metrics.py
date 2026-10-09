@@ -20,13 +20,14 @@ def reliability(y, p, bins: int = 5) -> pd.DataFrame:
     return out.round(3)
 
 
-def day_block_bootstrap(result: pd.DataFrame, models: list, reference: str, n_boot: int = 1000, seed: int = 0):
+def day_block_bootstrap(result: pd.DataFrame, models: list, reference, n_boot: int = 1000, seed: int = 0):
     """Resample whole days (rows of one day stay together) to respect dependence between neighbours.
 
     result: y, day and one probability column per model.
-    Returns (table, diffs): point estimate and 95% interval per model and metric, and the paired
-    difference to the reference model, computed on the same resampled days.
+    reference: one model name or a list of names. Returns (table, diffs): point estimate and 95% interval
+    per model and metric, and the paired difference to every reference model on the same resampled days.
     """
+    references = [reference] if isinstance(reference, str) else list(reference)
     y = result["y"].to_numpy()
     probs = {m: result[m].to_numpy() for m in models}
     _, inverse = np.unique(result["day"].to_numpy(), return_inverse=True)
@@ -49,14 +50,16 @@ def day_block_bootstrap(result: pd.DataFrame, models: list, reference: str, n_bo
             d = np.array(draws[(m, k)])
             lo, hi = np.percentile(d, [2.5, 97.5])
             rows.append({"model": m, "metric": k, "value": fn(y, probs[m]), "lo": lo, "hi": hi})
-            if m != reference:
-                dd = d - np.array(draws[(reference, k)])
+            for ref in references:
+                if m == ref:
+                    continue
+                dd = d - np.array(draws[(ref, k)])
                 better = (dd > 0) if k == "pr_auc" else (dd < 0)
                 dlo, dhi = np.percentile(dd, [2.5, 97.5])
                 diffs.append(
                     {
-                        "model": m, "metric": k, "vs": reference,
-                        "diff": fn(y, probs[m]) - fn(y, probs[reference]),
+                        "model": m, "metric": k, "vs": ref,
+                        "diff": fn(y, probs[m]) - fn(y, probs[ref]),
                         "lo": dlo, "hi": dhi, "share_better": float(better.mean()),
                     }
                 )
