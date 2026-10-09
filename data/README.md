@@ -1,7 +1,8 @@
 # Data
 
 Raw CSV files are not committed (about 40 MB, the source is updated daily).
-They are downloaded into `data/raw/` and the source commit is recorded below.
+Run `python scripts/download_data.py`: it downloads the pinned snapshot into `data/raw/`,
+checks file sizes and never overwrites existing files.
 
 Source: https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset (MIT license)
 
