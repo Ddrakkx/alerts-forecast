@@ -20,6 +20,16 @@ def reliability(y, p, bins: int = 5) -> pd.DataFrame:
     return out.round(3)
 
 
+def calibration_slope_intercept(y, p, eps: float = 1e-4) -> tuple[float, float]:
+    """Fit y ~ logit(p). Slope 1 and intercept 0 mean perfectly calibrated; slope < 1 means overconfident."""
+    from sklearn.linear_model import LogisticRegression
+
+    p = np.clip(np.asarray(p, float), eps, 1 - eps)
+    z = np.log(p / (1 - p)).reshape(-1, 1)
+    m = LogisticRegression(C=1e6, max_iter=1000).fit(z, np.asarray(y, int))
+    return float(m.coef_[0, 0]), float(m.intercept_[0])
+
+
 def day_block_bootstrap(result: pd.DataFrame, models: list, reference, n_boot: int = 1000, seed: int = 0):
     """Resample whole days (rows of one day stay together) to respect dependence between neighbours.
 

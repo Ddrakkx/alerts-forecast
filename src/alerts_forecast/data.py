@@ -48,6 +48,35 @@ def load_regions(path, exclude=EXCLUDED_REGIONS) -> tuple[dict, pd.Timestamp]:
     return {r: _region_alerts(raw, r) for r in sorted(raw["region"].unique()) if r not in exclude}, data_end
 
 
+def merge_intervals(df: pd.DataFrame) -> pd.DataFrame:
+    """Union of intervals: overlapping or touching ones become one episode."""
+    d = df.sort_values("started_at")
+    run_end = d["finished_at"].cummax().shift()
+    group = (d["started_at"] > run_end).cumsum()  # NaT for the first row compares False, cumsum starts the first group at 0
+    out = d.groupby(group).agg(started_at=("started_at", "min"), finished_at=("finished_at", "max"))
+    return out.reset_index(drop=True)
+
+
+def load_official_regions(path, exclude=EXCLUDED_REGIONS) -> dict:
+    """Official file as {oblast: episodes}: exact duplicates dropped, raion/hromada alerts merged into
+    oblast-level episodes (an oblast is under alert while any of its parts is). naive is always False."""
+    raw = pd.read_csv(Path(path))
+    for col in ("started_at", "finished_at"):
+        if not raw[col].str.endswith("+00:00").all():
+            raise ValueError(f"{col}: found timestamps that are not in UTC")
+        raw[col] = pd.to_datetime(raw[col], utc=True).dt.as_unit("ns")
+    raw = raw.drop_duplicates()
+    out = {}
+    for oblast, d in raw.groupby("oblast"):
+        if oblast in exclude:
+            continue
+        episodes = merge_intervals(d[["started_at", "finished_at"]])
+        episodes["naive"] = False
+        validate_alerts(episodes)
+        out[oblast] = episodes
+    return out
+
+
 def validate_alerts(alerts: pd.DataFrame) -> None:
     """Alerts of one region must be sorted, end after start and must not overlap."""
     if (alerts["finished_at"] < alerts["started_at"]).any():
