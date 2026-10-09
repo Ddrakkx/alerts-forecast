@@ -62,6 +62,15 @@ def main() -> None:
             print(f"\nPaired difference to {ref}; Brier < 0 and PR-AUC > 0 mean better")
             print(d[["model", "metric", "difference", "share_better"]].to_string(index=False))
 
+        # POST HOC, added after the first run showed that the reference of the criterion was a weak logistic variant
+        top = "hgb[own+nbr+cty]"
+        others = [f for f in ev.chosen if f != top]
+        _, d2 = day_block_bootstrap(ev.res, [top, *others], others, n_boot=args.boot)
+        d2 = d2[d2.model == top].copy()
+        d2 = d2.assign(difference=[fmt(r.diff, r.lo, r.hi) for r in d2.itertuples()], share_better=d2.share_better.round(3))
+        print(f"\nPOST HOC (not part of the criterion): {top} against every other chosen family")
+        print(d2[["vs", "metric", "difference", "share_better"]].sort_values(["metric", "vs"]).to_string(index=False))
+
 
 if __name__ == "__main__":
     main()

@@ -130,3 +130,19 @@ Template for each entry:
 - Criterion (written before the first run): boosting counts as better than the logistic regression only if the paired 95% interval
   of the difference is entirely above 0 for PR-AUC or entirely below 0 for Brier, at H=1 or H=3. Otherwise: no gain, reported as such.
 - Further option, not done yet: the dataset updates daily, so a later snapshot would give a block that nobody has looked at.
+
+### Result of decision 6 (results/boosting.txt; run twice, identical numbers)
+- Criterion, as written before the run: met at H=1, not met at H=3.
+  - H=1, hgb[own+nbr+cty] vs the best logistic family chosen on validation (logreg[own+nbr]+platt):
+    PR-AUC +0.052 [0.022, 0.085], Brier -0.0029 [-0.0058, -0.0004].
+  - H=3, vs logreg[own+nbr+cty]+platt: PR-AUC -0.013 [-0.059, 0.031], Brier +0.0022 [-0.0026, 0.0073]. No gain.
+- Caveat found after the first run (post hoc, so to be read with care): the reference chosen by validation was a weak logistic variant.
+  Against logreg[own+nbr+cty] without Platt the H=1 difference is PR-AUC +0.015 [-0.013, 0.046], Brier -0.0010 [-0.0035, 0.0012]:
+  not distinguishable from zero. Fair summary: boosting is about as good as the best logistic regression, not demonstrably better.
+- Post hoc, one of 22 pairs printed, so exploratory: inside boosting the neighbour and country features matter at H=1:
+  hgb[own+nbr+cty] vs hgb[own] PR-AUC +0.051 [0.017, 0.088], Brier -0.0034 [-0.0066, -0.0004]. With logistic regression the same
+  step was small and not significant (+0.013 [-0.012, 0.040]), so the information probably needs a non-linear model.
+- Brier against the constant stays unproven for boosting too (H=1: -0.0022 [-0.0053, 0.0007]).
+- Mistake of mine during this step: a string with a line break in the post-hoc block made the script fail and overwrote the
+  saved first-run output. The first run had been copied beforehand, so nothing was lost; now the script is compile-checked before long runs.
+- Time box closed: no further model work.
