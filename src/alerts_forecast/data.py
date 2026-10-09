@@ -4,7 +4,31 @@ from pathlib import Path
 import pandas as pd
 
 REGION = "Poltavska oblast"
+# permanent siren since 2022 (see the dataset README): 3 records, not a real series
+EXCLUDED_REGIONS = ("Luhanska oblast",)
 REQUIRED_COLUMNS = ("region", "started_at", "finished_at", "naive")
+
+
+def _read(path) -> tuple[pd.DataFrame, pd.Timestamp]:
+    raw = pd.read_csv(Path(path))
+    missing = set(REQUIRED_COLUMNS) - set(raw.columns)
+    if missing:
+        raise ValueError(f"missing columns: {sorted(missing)}")
+    for col in ("started_at", "finished_at"):
+        if not raw[col].str.endswith("+00:00").all():
+            raise ValueError(f"{col}: found timestamps that are not in UTC")
+        raw[col] = pd.to_datetime(raw[col], utc=True).dt.as_unit("ns")
+    data_end = max(raw["started_at"].max(), raw["finished_at"].max())
+    return raw, data_end
+
+
+def _region_alerts(raw: pd.DataFrame, region: str) -> pd.DataFrame:
+    alerts = raw.loc[raw["region"] == region, ["started_at", "finished_at", "naive"]]
+    alerts = alerts.sort_values("started_at").reset_index(drop=True)
+    if alerts.empty:
+        raise ValueError(f"no alerts for region {region!r}")
+    validate_alerts(alerts)
+    return alerts
 
 
 def load_volunteer(path, region: str = REGION) -> tuple[pd.DataFrame, pd.Timestamp]:
@@ -14,24 +38,14 @@ def load_volunteer(path, region: str = REGION) -> tuple[pd.DataFrame, pd.Timesta
     end of data: the latest timestamp observed in the WHOLE file (any oblast, start or end).
     A region without alerts after its last event is only known to be quiet up to this moment.
     """
-    raw = pd.read_csv(Path(path))
-    missing = set(REQUIRED_COLUMNS) - set(raw.columns)
-    if missing:
-        raise ValueError(f"missing columns: {sorted(missing)}")
+    raw, data_end = _read(path)
+    return _region_alerts(raw, region), data_end
 
-    for col in ("started_at", "finished_at"):
-        if not raw[col].str.endswith("+00:00").all():
-            raise ValueError(f"{col}: found timestamps that are not in UTC")
-        raw[col] = pd.to_datetime(raw[col], utc=True).dt.as_unit("ns")
 
-    data_end = max(raw["started_at"].max(), raw["finished_at"].max())
-
-    alerts = raw.loc[raw["region"] == region, ["started_at", "finished_at", "naive"]]
-    alerts = alerts.sort_values("started_at").reset_index(drop=True)
-    if alerts.empty:
-        raise ValueError(f"no alerts for region {region!r}")
-    validate_alerts(alerts)
-    return alerts, data_end
+def load_regions(path, exclude=EXCLUDED_REGIONS) -> tuple[dict, pd.Timestamp]:
+    """Return ({region: alerts}, end of data) for every region except the excluded ones."""
+    raw, data_end = _read(path)
+    return {r: _region_alerts(raw, r) for r in sorted(raw["region"].unique()) if r not in exclude}, data_end
 
 
 def validate_alerts(alerts: pd.DataFrame) -> None:

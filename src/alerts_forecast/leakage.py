@@ -12,17 +12,22 @@ def truncate_at(alerts: pd.DataFrame, t: pd.Timestamp) -> pd.DataFrame:
     return known
 
 
-def truncation_violations(fn, alerts: pd.DataFrame, times) -> list:
+def truncate_regions(by_region: dict, t: pd.Timestamp) -> dict:
+    """The same cut for every region at once."""
+    return {r: truncate_at(a, t) for r, a in by_region.items()}
+
+
+def truncation_violations(fn, alerts, times, truncate=truncate_at) -> list:
     """Moments t where fn(full table, [t]) differs from fn(table cut at t, [t]).
 
-    fn(alerts, times) must return a DataFrame with one row per time. An empty result means
-    that fn at t did not use anything that happened after t.
+    fn(alerts, times) must return a DataFrame with one row per time; alerts is one table, or a dict of
+    tables when truncate=truncate_regions. An empty result means fn at t did not use anything after t.
     """
     bad = []
     for t in times:
         idx = pd.DatetimeIndex([t])
         full = fn(alerts, idx)
-        cut = fn(truncate_at(alerts, t), idx)
+        cut = fn(truncate(alerts, t), idx)
         if not full.equals(cut):
             bad.append(t)
     return bad
