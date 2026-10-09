@@ -30,3 +30,21 @@ Template for each entry:
   Compare direction and ranking of models, not absolute numbers.
 - Risks: volunteer data is unofficial; its rule for splitting alerts may differ from
   the official one; this must be stated in the README.
+
+## 2. Target, grid, sample
+- Grid: forecast moments t every 15 min on the UTC clock (:00 :15 :30 :45).
+  At t only alerts with started_at <= t are known. Alert is active if started_at <= t < finished_at.
+  Only the fact "not finished yet" is used, never the value of finished_at.
+- Target: y_H(t) = 1 if an alert starts in the half-open window (t, t+H]. A start exactly at t is the past.
+  H in {1, 3, 6} hours, all reported, the main one is H = 3.
+- Main sample (train and test): only t with no active alert. Active t are kept for a secondary check.
+- Naive alerts (invented end = start + 30 min, 1.9%) stay as they are. Sensitivity run excludes t whose
+  previous alert is naive (`prev_naive`). It is for evaluation only, never a model feature,
+  because in real time it is not known that an end was invented.
+- Mandatory breakdown of results by minutes since the last alert ended: <=30, 30-180, >180.
+  Reason: 12% of alert starts come <=30 min after the previous end, 25% <=60 min (last year, volunteer, Poltava).
+- End of data = the latest timestamp observed anywhere in the file (any oblast, started_at or finished_at),
+  2026-10-09 05:12:41 UTC. Last usable t = floor_15min(end - H), so the label window is fully observed.
+- Correction: I first proposed the commit time of the dataset (05:17) as the end. It says when the file
+  was built, not what was observed, so it was replaced by the last observed timestamp (user's question).
+- Risks: the file may lag behind real events near its end (cannot be checked); I will test dropping the last day later.
