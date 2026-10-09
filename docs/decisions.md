@@ -93,3 +93,30 @@ Template for each entry:
   - The best C was the smallest of the grid (0.01) for every set: the grid is cut at the edge. To extend downward, chosen on validation.
 - Caveats: many comparisons were printed (3 horizons, 3 feature sets, 2 references); only H=3 vs the best baseline was the planned comparison, the rest is exploratory.
   Coefficients with C=0.01 are heavily shrunk, a negative coefficient of Sumska is not to be read as a cause.
+
+## 5. Extended grids, Platt recalibration, robustness. RETRACTION of the first H=3 headline
+- Grids extended on the edges (C down to 0.001, k up to 6400), chosen on validation as before; Platt recalibration
+  (sigmoid fitted on the newest 28 days of the past, model on the older part, gap H) added as separate families.
+  Outputs: results/experiment_v2.txt, results/robustness.txt (scripts/run_experiment.py, scripts/run_robustness.py).
+- RETRACTION: decision 4 said "H=3: PR-AUC +0.069 [0.018, 0.116] over the best baseline". With the extended grid,
+  validation picks C=0.001, 90 d and the same comparison gives +0.033 [-0.008, 0.069]: not distinguishable from zero.
+  So the first number depended on which hyperparameters the narrow grid allowed. C=0.001 is again the smallest value
+  of the grid, i.e. validation keeps asking for predictions that are almost the constant. Brier on validation barely moves
+  (0.2264 vs 0.2256 for the constant).
+- What holds:
+  - H=1: PR-AUC +0.066 [0.034, 0.095] over the constant (all feature sets positive); stable between the two grids
+    (+0.081 before), with naive-affected moments removed (+0.066 [0.031, 0.103]), without the last 24 h (+0.065 [0.035, 0.096]),
+    and on a period before the hole of the official data for both sources: volunteer +0.049 [0.022, 0.076],
+    official +0.063 [0.018, 0.106].
+  - H=3: positive but uncertain: main test +0.033 [-0.008, 0.069]; shifted period volunteer +0.056 [0.016, 0.090],
+    official +0.044 [-0.007, 0.087].
+  - Brier: no significant improvement over the best baseline in any of these runs (differences -0.005..+0.003, intervals contain 0).
+  - Platt recalibration did not help (test Brier unchanged, PR-AUC lower at H=1). The slope of the best model is 0.47 at H=3
+    (below 1: predictions more spread than the signal supports). Slopes of the baselines are meaningless (their predictions
+    are step-wise constant between blocks) and are not to be read.
+  - Neighbours vs own history: no gain; country-wide counts: at most a small one (H=6 Brier -0.0014 [-0.0023, -0.0004] vs own+nbr,
+    but H=3 PR-AUC +0.008 [-0.004, 0.020]). The claim "country-wide activity helps at H=3" from decision 4 is withdrawn too.
+- Sources differ in base rate (H=3, same period: volunteer 64.8%, official 72.0%), as expected from the different
+  splitting of alerts; the best baseline also differs by period (recent_activity in the shifted one). Compare direction, not levels.
+- Selection rule is Brier on validation for every family; PR-AUC would have picked other configurations. Not tried, to avoid
+  one more round of choices after seeing the test.

@@ -40,11 +40,8 @@ def run_configs(sample, h, start, end, all_configs) -> pd.DataFrame:
         models = {f"{fam}|{par}|{win}": fn for fam, par, win, fn in all_configs if win == w}
         if models:
             parts.append(walk_forward(sample, models, h, start, end, window_days=days))
-    out = parts[0][["y", "day"]].copy()
-    for res in parts:
-        for col in res.columns.difference(["y", "day"]):
-            out[col] = res[col]
-    return out
+    meta = parts[0][["y", "day"]]
+    return pd.concat([meta, *[res.drop(columns=["y", "day"]) for res in parts]], axis=1)
 
 
 @dataclass
