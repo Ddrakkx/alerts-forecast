@@ -1,0 +1,44 @@
+"""Loading and validation of the volunteer air-raid alert data."""
+from pathlib import Path
+
+import pandas as pd
+
+REGION = "Poltavska oblast"
+REQUIRED_COLUMNS = ("region", "started_at", "finished_at", "naive")
+
+
+def load_volunteer(path, region: str = REGION) -> tuple[pd.DataFrame, pd.Timestamp]:
+    """Return (alerts of one region, end of data).
+
+    alerts: columns started_at, finished_at (UTC, ns), naive (end was invented), sorted by start.
+    end of data: the latest timestamp observed in the WHOLE file (any oblast, start or end).
+    A region without alerts after its last event is only known to be quiet up to this moment.
+    """
+    raw = pd.read_csv(Path(path))
+    missing = set(REQUIRED_COLUMNS) - set(raw.columns)
+    if missing:
+        raise ValueError(f"missing columns: {sorted(missing)}")
+
+    for col in ("started_at", "finished_at"):
+        if not raw[col].str.endswith("+00:00").all():
+            raise ValueError(f"{col}: found timestamps that are not in UTC")
+        raw[col] = pd.to_datetime(raw[col], utc=True).dt.as_unit("ns")
+
+    data_end = max(raw["started_at"].max(), raw["finished_at"].max())
+
+    alerts = raw.loc[raw["region"] == region, ["started_at", "finished_at", "naive"]]
+    alerts = alerts.sort_values("started_at").reset_index(drop=True)
+    if alerts.empty:
+        raise ValueError(f"no alerts for region {region!r}")
+    validate_alerts(alerts)
+    return alerts, data_end
+
+
+def validate_alerts(alerts: pd.DataFrame) -> None:
+    """Alerts of one region must be sorted, end after start and must not overlap."""
+    if (alerts["finished_at"] < alerts["started_at"]).any():
+        raise ValueError("found an alert that ends before it starts")
+    if not alerts["started_at"].is_monotonic_increasing:
+        raise ValueError("alerts are not sorted by start")
+    if (alerts["started_at"].iloc[1:].to_numpy() < alerts["finished_at"].iloc[:-1].to_numpy()).any():
+        raise ValueError("found overlapping alerts in one region")
