@@ -6,18 +6,20 @@ import pandas as pd
 from .baselines import constant_rate, hour_of_week_rate, make_smoothed_hour_of_week, recent_activity_rate
 from .features import FEATURE_SETS
 from .metrics import brier
-from .models import make_logreg, make_platt
+from .models import make_hgb, make_logreg, make_platt
 from .walkforward import walk_forward
 
 BASE_WINDOWS = {"all": None, "365d": 365, "180d": 180, "90d": 90}
 LR_WINDOWS = {"365d": 365, "180d": 180, "90d": 90}  # "all past" lost by a wide margin for every baseline
 K_GRID = (25, 100, 400, 1600, 6400)
 C_GRID = (0.001, 0.003, 0.01, 0.1)
+HGB_GRID = [(d, n) for d in (2, 3) for n in (50, 150)]  # (max_depth, iterations)
+HGB_SETS = ("own", "own+nbr+cty")
 PRESET_BASELINES = ("constant", "recent_activity", "hour_of_week")
 POSTHOC = "hour_of_week_smooth"
 
 
-def configs() -> list:
+def configs(boosting: bool = False) -> list:
     """(family, param, window label, fit_predict)"""
     out = []
     for w in BASE_WINDOWS:
@@ -30,6 +32,10 @@ def configs() -> list:
                 base = make_logreg(cols, c)
                 out.append((f"logreg[{set_name}]", f"C={c}", w, base))
                 out.append((f"logreg[{set_name}]+platt", f"C={c}", w, make_platt(base)))
+    if boosting:
+        for set_name in HGB_SETS:
+            for w in LR_WINDOWS:
+                out += [(f"hgb[{set_name}]", f"depth={d},iter={n}", w, make_hgb(FEATURE_SETS[set_name], d, n)) for d, n in HGB_GRID]
     return out
 
 
@@ -70,7 +76,7 @@ def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Ev
     fam_b = lambda f: val_brier[chosen[f]]  # noqa: E731
     bar_a = min(PRESET_BASELINES, key=fam_b)
     bar_b = min((*PRESET_BASELINES, POSTHOC), key=fam_b)
-    lr_best = min((f for f in chosen if f.startswith("logreg")), key=fam_b)
+    lr_best = min((f for f in chosen if f.startswith("logreg")), key=fam_b)  # hgb families are compared to it
     res = test[["y", "day"]].copy()
     res["prev_naive"] = sample.loc[res.index, "prev_naive"].to_numpy()
     for fam, c in chosen.items():

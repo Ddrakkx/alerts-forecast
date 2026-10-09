@@ -86,3 +86,15 @@ def test_platt_repairs_an_overconfident_model():
     before = calibration_slope_intercept(test["y"], overconfident(train, test, 3))[0]
     after = calibration_slope_intercept(test["y"], make_platt(overconfident, cal_days=60)(train, test, 3))[0]
     assert before < 0.6 and abs(after - 1) < 0.2
+
+
+def test_hgb_is_deterministic_and_ignores_test_labels():
+    from alerts_forecast.models import make_hgb
+
+    df = _toy(n=1500)
+    train, test = df.iloc[:1200], df.iloc[1200:]
+    fn = make_hgb(["x"], 2, 30)
+    p1 = fn(train, test, 3)
+    assert np.allclose(p1, fn(train, test.assign(y=~test["y"]), 3))
+    assert np.allclose(p1, make_hgb(["x"], 2, 30)(train, test, 3))
+    assert np.corrcoef(p1, test["x"])[0, 1] > 0.8 and 0 < p1.min() and p1.max() < 1

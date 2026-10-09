@@ -120,3 +120,13 @@ Template for each entry:
   splitting of alerts; the best baseline also differs by period (recent_activity in the shifted one). Compare direction, not levels.
 - Selection rule is Brier on validation for every family; PR-AUC would have picked other configurations. Not tried, to avoid
   one more round of choices after seeing the test.
+
+## 6. Gradient boosting (time-boxed), criterion fixed before the run
+- Model: sklearn HistGradientBoostingClassifier, learning rate 0.05, min 200 rows per leaf, L2 1.0, no early stopping
+  (its validation split is random, not time-ordered), grid depth {2, 3} x iterations {50, 150} x window {365, 180, 90} d,
+  feature sets own and own+nbr+cty. Horizons H=1 and H=3. Selection on validation by Brier, as for every family.
+- The test block has already been seen for the baselines and the logistic regression (decisions 3-5), so it is not untouched.
+  For boosting it is looked at once; no second round of choices after it.
+- Criterion (written before the first run): boosting counts as better than the logistic regression only if the paired 95% interval
+  of the difference is entirely above 0 for PR-AUC or entirely below 0 for Brier, at H=1 or H=3. Otherwise: no gain, reported as such.
+- Further option, not done yet: the dataset updates daily, so a later snapshot would give a block that nobody has looked at.
