@@ -75,6 +75,7 @@ class Evaluation:
     bar_a: str        # best of the pre-specified baselines
     bar_b: str        # best including the post-hoc baselines (smoothed hour of week, recent level)
     lr_best: str      # logistic family with the best validation Brier
+    oracle: str       # baseline family with the best Brier on the TEST block: a strict, optimistic-for-baselines reference
     res: pd.DataFrame  # test: y, day, prev_naive and one column per family (chosen configuration)
 
 
@@ -96,4 +97,6 @@ def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Ev
     res["prev_naive"] = sample.loc[res.index, "prev_naive"].to_numpy()
     for fam, c in chosen.items():
         res[fam] = test[c]
-    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, res)
+    baselines = [f for f in chosen if f in (*PRESET_BASELINES, *POSTHOC_FAMILIES)]
+    oracle = min(baselines, key=lambda f: brier(res["y"], res[f]))
+    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, oracle, res)

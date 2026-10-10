@@ -35,12 +35,12 @@ region Kyivska oblast
       logreg[own+nbr+cty]      PR-AUC 0.461  diff 0.047 [-0.000, 0.085] | Brier 0.2394  diff -0.0020 [-0.0103, 0.0062]
       logreg[own+nbr+cty]+platt PR-AUC 0.449  diff 0.035 [-0.021, 0.078] | Brier 0.2393  diff -0.0021 [-0.0107, 0.0064]
 
-[volunteer] H=1: test 2026-07-04..2026-08-29, bar B = recent_activity (|180d), logreg chosen = C=0.003|180d
-  all rows                           rows= 4952 pos=19.2% | recent_activity PR-AUC 0.238, Brier 0.1554
-      logreg[own+nbr+cty]      PR-AUC 0.317  diff 0.079 [0.034, 0.127] | Brier 0.1481  diff -0.0073 [-0.0138, -0.0011]
-      logreg[own+nbr+cty]+platt PR-AUC 0.319  diff 0.081 [0.032, 0.130] | Brier 0.1479  diff -0.0075 [-0.0138, -0.0020]
+[volunteer] H=1: test 2026-07-04..2026-08-29, bar B = recent_level (|14d), logreg chosen = C=0.003|180d
+  all rows                           rows= 4952 pos=19.2% | recent_level PR-AUC 0.193, Brier 0.1555
+      logreg[own+nbr+cty]      PR-AUC 0.317  diff 0.124 [0.077, 0.164] | Brier 0.1481  diff -0.0074 [-0.0134, -0.0023]
+      logreg[own+nbr+cty]+platt PR-AUC 0.319  diff 0.125 [0.075, 0.168] | Brier 0.1479  diff -0.0076 [-0.0134, -0.0031]
 
-[official] H=1: test 2026-07-04..2026-08-29, bar B = recent_activity (|180d), logreg chosen = C=0.01|365d
-  all rows                           rows= 4405 pos=17.0% | recent_activity PR-AUC 0.209, Brier 0.1405
-      logreg[own+nbr+cty]      PR-AUC 0.255  diff 0.046 [0.004, 0.085] | Brier 0.1387  diff -0.0019 [-0.0063, 0.0013]
-      logreg[own+nbr+cty]+platt PR-AUC 0.263  diff 0.054 [0.001, 0.106] | Brier 0.1384  diff -0.0021 [-0.0050, 0.0003]
+[official] H=1: test 2026-07-04..2026-08-29, bar B = recent_level (|14d), logreg chosen = C=0.01|365d
+  all rows                           rows= 4405 pos=17.0% | recent_level PR-AUC 0.162, Brier 0.1416
+      logreg[own+nbr+cty]      PR-AUC 0.255  diff 0.094 [0.044, 0.162] | Brier 0.1387  diff -0.0029 [-0.0082, 0.0006]
+      logreg[own+nbr+cty]+platt PR-AUC 0.263  diff 0.101 [0.040, 0.181] | Brier 0.1384  diff -0.0032 [-0.0068, -0.0009]

@@ -58,13 +58,14 @@ def main() -> None:
         ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
         res, chosen = ev.res, ev.chosen
         families = list(chosen)
-        refs = list(dict.fromkeys([ev.bar_b, ev.bar_a, "logreg[own]", "logreg[own+nbr]"]))
+        refs = list(dict.fromkeys([ev.bar_b, ev.bar_a, ev.oracle, "logreg[own]", "logreg[own+nbr]"]))
         table, diffs = day_block_bootstrap(res, families, refs, n_boot=args.boot)
 
         print(f"\n===== H = {h} h {'(main)' if h == MAIN_HORIZON_H else ''}  [{time.time() - t0:.0f}s] =====")
         print(f"test rows {len(res)}, days {res['day'].nunique()}, positive rate {res['y'].mean():.1%}; "
               f"validation rows {len(ev.val)}, positive rate {ev.val['y'].mean():.1%}")
         print(f"bar A (pre-specified baselines) = {ev.bar_a} | bar B (incl. post-hoc baselines) = {ev.bar_b}")
+        print(f"best baseline on the test block (oracle, strict) = {ev.oracle}")
 
         rows = []
         for fam in families:
@@ -82,7 +83,7 @@ def main() -> None:
             if d.empty:
                 continue
             d = d.assign(difference=[fmt(r.diff, r.lo, r.hi) for r in d.itertuples()], share_better=d.share_better.round(3))
-            tag = " (bar B)" if ref == ev.bar_b else " (bar A)" if ref == ev.bar_a else ""
+            tag = "".join([" (bar B)" if ref == ev.bar_b else "", " (bar A)" if ref == ev.bar_a else "", " (oracle: best baseline on TEST)" if ref == ev.oracle else ""])
             print(f"\nPaired difference to {ref}{tag}; Brier < 0 and PR-AUC > 0 mean better")
             print(d[["model", "metric", "difference", "share_better"]].to_string(index=False))
 
