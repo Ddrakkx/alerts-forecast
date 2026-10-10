@@ -374,3 +374,6 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
 - Clarification written before the first forecast: a forecast counts only if it is written at most 3 minutes after the all-clear moment t
   (otherwise an answer could already be in the log); later ones are written with counted = false and left out of the summary. The model training at
   start takes minutes, so an all-clear during training would be late. Code: demo/live_forecast.py (tests: demo/test_live_forecast.py), committed before it ran.
+- Bug fixed before any forecast existed: the report decided whether an answer window had passed by the time of the last log EVENT, but quiet minutes
+  write no event, so a window without any alert would have stayed "unknown". It now uses the last successful poll in polls.csv (tested).
+  The running forecaster did not need a restart: forecasting code was unchanged, the report runs as a separate command.

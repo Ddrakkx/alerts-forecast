@@ -55,3 +55,10 @@ def test_a_logger_restart_does_not_lose_an_end(tmp_path):
     closed, open_ = LF.intervals(LF.load_log(tmp_path))
     assert open_ == {} and closed[0][3] == pd.Timestamp("2026-10-10 12:30", tz="UTC")  # end known only at the second snapshot
     assert LF.poltava_all_clears(closed, open_) == [pd.Timestamp("2026-10-10 12:30", tz="UTC")]
+
+
+def test_last_successful_poll_ignores_errors_and_is_not_the_last_event(tmp_path):
+    p = tmp_path / "polls.csv"
+    p.write_text("polled_at,status\n2026-10-10T12:51:29+00:00,200\n2026-10-10T12:52:29+00:00,304\n"
+                 "2026-10-10T12:53:29+00:00,error: OSError\n", encoding="utf-8")
+    assert LF.last_successful_poll(p) == pd.Timestamp("2026-10-10 12:52:29", tz="UTC")

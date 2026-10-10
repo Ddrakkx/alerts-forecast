@@ -180,6 +180,16 @@ def history_status(t: pd.Timestamp) -> dict:
 
 
 # ---------------------------------------------------------------- answers from the eMap log
+def last_successful_poll(polls_csv: Path) -> pd.Timestamp:
+    """Time of the last poll that got the feed (200 or 304). Up to then the log is complete."""
+    last = None
+    for line in polls_csv.read_text(encoding="utf-8").splitlines()[1:]:
+        parts = line.split(",")
+        if len(parts) > 1 and parts[1] in ("200", "304"):
+            last = parts[0]
+    return ts(last) if last else pd.Timestamp(0, tz="UTC")
+
+
 def report() -> None:
     fpath = OUT / "forecasts.jsonl"
     if not fpath.exists():
@@ -188,7 +198,7 @@ def report() -> None:
     recs = [json.loads(x) for x in fpath.read_text(encoding="utf-8").splitlines() if x.strip()]
     closed, open_ = intervals(load_log(LOG))
     starts = [(s, lvl) for o, r, s, e, lvl in closed if o == POLTAVA_UA] + [(s, lvl) for (o, r), (s, lvl) in open_.items() if o == POLTAVA_UA]
-    last_poll = load_log(LOG)[-1][0]
+    last_poll = last_successful_poll(LOG / "polls.csv")  # not the last event: quiet minutes write no event
     rows = []
     for rec in recs:
         t = ts(rec["t"])
