@@ -346,5 +346,8 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   poll times around it; an end is only known to lie between two polls), polls.csv, and a full snapshot at start. Tested without network
   (demo/test_emap_logger.py, 5 tests) and with 3 live polls (exactly 60 s apart). Started in the user's terminal on 2026-10-10 ~12:28 UTC;
   it runs only while that terminal (and the computer) runs.
+- Mistake found right after starting it: the first poll of the long run came 20 s after the last poll of the 3-poll test run, because each
+  process only spaced its own requests. Fixed: at start the logger reads the last poll time from polls.csv and waits until a minute
+  has passed (tested); the logger was restarted with the fix.
 - Planned after the holdout: aggregate the logged raion events to oblasts (an oblast is "under alert" if any raion is, and separately red only)
   and match them with the new volunteer snapshot for the logged period: which volunteer starts coincide with red and which with yellow raion starts.

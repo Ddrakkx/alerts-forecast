@@ -95,3 +95,17 @@ def test_fetcher_sends_conditional_headers_and_understands_304():
     assert f.get() == (304, None, "Sat, 10 Oct 2026 12:17:41 GMT")
     assert seen[1].get("If-none-match") == '"abc"' and "If-modified-since" in seen[1]
     assert "alerts-forecast" in seen[0]["User-agent"]
+
+
+def test_the_minute_holds_across_restarts(tmp_path):
+    from datetime import datetime, timezone
+
+    polls = tmp_path / "polls.csv"
+    assert L.seconds_to_wait(polls, 60, datetime(2026, 10, 10, 12, 28, tzinfo=timezone.utc)) == 0.0
+    polls.write_text("polled_at,status\n2026-10-10T12:27:09+00:00,200\n", encoding="utf-8")
+    t = datetime(2026, 10, 10, 12, 27, 29, tzinfo=timezone.utc)
+    assert L.seconds_to_wait(polls, 60, t) == 40.0  # a restart 20 s after the last poll waits 40 s
+    sleeps = []
+    fetch = FakeFetcher([(304, None, "lm")])
+    L.run(interval=60, max_polls=1, out=tmp_path, fetcher=fetch, sleep=sleeps.append, clock=lambda: 0.0, now=lambda: t)
+    assert sleeps[0] == 40.0

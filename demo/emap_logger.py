@@ -103,10 +103,28 @@ class Fetcher:
             raise
 
 
-def run(interval: int = MIN_INTERVAL_S, max_polls=None, out: Path = OUT, fetcher=None, sleep=time.sleep, clock=time.monotonic) -> None:
+def seconds_to_wait(polls_csv: Path, interval: int, now: datetime) -> float:
+    """The minute also holds across restarts: wait until `interval` seconds have passed since the last poll in polls.csv."""
+    if not polls_csv.exists():
+        return 0.0
+    lines = polls_csv.read_text(encoding="utf-8").strip().splitlines()
+    if len(lines) < 2:
+        return 0.0
+    try:
+        last = datetime.fromisoformat(lines[-1].split(",")[0])
+    except ValueError:
+        return float(interval)  # unreadable: be safe
+    return max(0.0, interval - (now - last).total_seconds())
+
+
+def run(interval: int = MIN_INTERVAL_S, max_polls=None, out: Path = OUT, fetcher=None, sleep=time.sleep, clock=time.monotonic,
+        now=lambda: datetime.now(timezone.utc)) -> None:
     if interval < MIN_INTERVAL_S:
         raise SystemExit(f"interval {interval} s is below the agreed minimum of {MIN_INTERVAL_S} s")
     out.mkdir(parents=True, exist_ok=True)
+    wait = seconds_to_wait(out / "polls.csv", interval, now())
+    if wait > 0:
+        sleep(wait)
     fetcher = fetcher or Fetcher()
     events_f = open(out / "events.jsonl", "a", encoding="utf-8")
     polls_new = not (out / "polls.csv").exists()
