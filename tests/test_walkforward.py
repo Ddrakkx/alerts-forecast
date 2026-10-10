@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import pandas as pd
 
@@ -156,3 +157,27 @@ def test_recent_level_baseline_uses_only_the_last_days_before_each_day():
     # purge: the training rows used for a day end at least H hours before that day starts
     first = out.index.min()
     assert out.loc[first, f"{RECENT_LEVEL}||3d"] == sample.loc[(sample.index > first - pd.Timedelta(hours=3, days=3)) & (sample.index <= first - pd.Timedelta(hours=3)), "y"].mean()
+
+
+def test_feature_grid_covers_every_horizon_and_missing_features_are_refused():
+    from alerts_forecast.experiment import feature_index, join_features
+    from alerts_forecast.target import build_frame, main_sample
+
+    start = pd.Timestamp("2026-01-01 10:00", tz="UTC").as_unit("ns")
+    alerts = pd.DataFrame({
+        "started_at": [start + pd.Timedelta(hours=k * 5) for k in range(10)],
+        "finished_at": [start + pd.Timedelta(hours=k * 5, minutes=40) for k in range(10)],
+        "naive": False,
+    })
+    data_end = start + pd.Timedelta(hours=60)
+    horizons = [3, 1, 0.25]
+    idx = feature_index(alerts, data_end, horizons)
+    feats = pd.DataFrame({"f": 1.0}, index=idx)
+    for h in horizons:
+        sample = main_sample(build_frame(alerts, data_end, h))
+        assert sample.index.isin(idx).all(), h  # the shortest horizon reaches furthest
+        assert not join_features(sample, feats)["f"].isna().any()
+    # the old way (features on the 1 h grid) leaves the last 45 minutes of the 15-minute sample without features
+    old = pd.DataFrame({"f": 1.0}, index=feature_index(alerts, data_end, [1]))
+    with pytest.raises(ValueError, match="without features"):
+        join_features(main_sample(build_frame(alerts, data_end, 0.25)), old)

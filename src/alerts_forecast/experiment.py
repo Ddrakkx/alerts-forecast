@@ -7,6 +7,7 @@ from .baselines import constant_rate, hour_of_week_rate, make_smoothed_hour_of_w
 from .features import feature_sets
 from .metrics import brier
 from .models import make_hgb, make_logreg, make_platt
+from .target import GRID_STEP, make_grid
 from .walkforward import walk_forward
 
 BASE_WINDOWS = {"all": None, "365d": 365, "180d": 180, "90d": 90}
@@ -20,6 +21,23 @@ POSTHOC = "hour_of_week_smooth"
 RECENT_LEVEL = "recent_level"  # post hoc 2: constant rate of the last W days, refit every day
 RL_WINDOWS = {"3d": 3, "7d": 7, "14d": 14, "30d": 30}
 POSTHOC_FAMILIES = (POSTHOC, RECENT_LEVEL)
+
+
+def feature_index(alerts, data_end, horizons) -> pd.DatetimeIndex:
+    """Grid on which features are built: the one of the SHORTEST horizon, which reaches furthest (end - H)."""
+    return make_grid(alerts, data_end, pd.Timedelta(hours=min(horizons)))
+
+
+def join_features(sample: pd.DataFrame, feats: pd.DataFrame) -> pd.DataFrame:
+    """Attach features to the sample and refuse to continue if any row lacks them.
+
+    Boosting accepts NaN silently, so a grid mismatch would not crash, it would quietly change the result.
+    """
+    out = sample.join(feats)
+    missing = out[feats.columns].isna().any(axis=1)
+    if missing.any():
+        raise ValueError(f"{int(missing.sum())} rows without features, first at {out.index[missing][0]}")
+    return out
 
 
 def configs(neighbors, boosting: bool = False) -> list:

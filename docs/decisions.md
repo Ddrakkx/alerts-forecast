@@ -184,3 +184,18 @@ Template for each entry:
 - Mistakes of mine in this step: the first summary script was written with a string that the shell mangled (a line break inside a quoted string), twice; it stopped a
   command chain before a commit. Two statements in the first README draft were not backed by the data (a count of 6 significant Brier cells instead of 5, a claim about
   Lviv's hour-of-week signal) and one was wrong (the C statement) until I counted; all fixed before the commit.
+
+## 8. Additional short horizons: 15 and 30 minutes (written before the run)
+- User's idea: at H=3 the target is close to saturated (Poltava 66% positive moments), so shorter horizons may leave more to predict.
+  H = 0.25 h and 0.5 h are ADDITIONAL and exploratory. The main horizon stays H = 3 h; nothing in the main tables is replaced.
+- Same protocol, each oblast separately (Poltavska, Kyivska, Kharkivska, Lvivska): weekly walk-forward, purge = H, configurations
+  chosen on validation by Brier, two references (best baseline on validation; best baseline on the test block, strict).
+- Question 1: do the models beat the references at 15/30 min?
+- Question 2 (user's): do neighbours and the country help here? "Help" = paired 95% interval of the difference above 0 for PR-AUC or below 0
+  for Brier, for logreg[own+nbr] vs logreg[own], logreg[own+nbr+cty] vs logreg[own], and hgb[own+nbr+cty] vs hgb[own].
+- Expectation and caveat written in advance: if neighbours help, it should show most at 15 min, because an incoming wave is often declared
+  in neighbouring oblasts first. With a 15-minute horizon part of that is close to nowcasting (the wave is already under way and visible at t).
+  That is legitimate (everything is known at t) but the lead time is at most 15 minutes and the README has to say so.
+- Bug found before the first run: features were built on the 1-hour grid ("the longest"), but the 15-minute grid reaches 45 minutes further.
+  Logistic regression would have crashed on NaN, boosting would have accepted NaN silently. Fixed: features are built on the grid of the
+  shortest horizon, and `join_features` refuses any row without features (tested). Main results must stay identical; checked after the run.

@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from alerts_forecast.data import REGION, load_regions  # noqa: E402
-from alerts_forecast.experiment import LR_WINDOWS, POSTHOC_FAMILIES, configs, evaluate  # noqa: E402
+from alerts_forecast.experiment import (  # noqa: E402
+    LR_WINDOWS, POSTHOC_FAMILIES, configs, evaluate, feature_index, join_features,
+)
 from alerts_forecast.features import build_features, feature_sets, neighbors_of  # noqa: E402
 from alerts_forecast.metrics import calibration_slope_intercept, day_block_bootstrap, reliability  # noqa: E402
 from alerts_forecast.target import MAIN_HORIZON_H, build_frame, main_sample  # noqa: E402
@@ -37,7 +39,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--boot", type=int, default=1000)
     ap.add_argument("--region", default=REGION)
-    ap.add_argument("--horizons", type=int, nargs="+", default=[MAIN_HORIZON_H, 1, 6])
+    ap.add_argument("--horizons", type=float, nargs="+", default=[MAIN_HORIZON_H, 1, 6])
     args = ap.parse_args()
 
     regions, data_end = load_regions(ROOT / "data" / "raw" / "volunteer_data_en.csv")
@@ -49,19 +51,19 @@ def main() -> None:
     print(f"region {region} | neighbours {len(nbrs)} | data end {data_end:%Y-%m-%d %H:%M} UTC | validation {val_start:%Y-%m-%d}..{test_start:%Y-%m-%d} | "
           f"test {test_start:%Y-%m-%d}..{data_end:%Y-%m-%d}")
 
-    feats = build_features(regions, region, build_frame(alerts, data_end, 1).index, nbrs)  # H=1 grid is the longest
+    feats = build_features(regions, region, feature_index(alerts, data_end, args.horizons), nbrs)
     all_configs = configs(nbrs)
 
     for h in args.horizons:
         t0 = time.time()
-        sample = main_sample(build_frame(alerts, data_end, h)).join(feats)
+        sample = join_features(main_sample(build_frame(alerts, data_end, h)), feats)
         ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
         res, chosen = ev.res, ev.chosen
         families = list(chosen)
         refs = list(dict.fromkeys([ev.bar_b, ev.bar_a, ev.oracle, "logreg[own]", "logreg[own+nbr]"]))
         table, diffs = day_block_bootstrap(res, families, refs, n_boot=args.boot)
 
-        print(f"\n===== H = {h} h {'(main)' if h == MAIN_HORIZON_H else ''}  [{time.time() - t0:.0f}s] =====")
+        print(f"\n===== H = {h:g} h {'(main)' if h == MAIN_HORIZON_H else ''}  [{time.time() - t0:.0f}s] =====")
         print(f"test rows {len(res)}, days {res['day'].nunique()}, positive rate {res['y'].mean():.1%}; "
               f"validation rows {len(ev.val)}, positive rate {ev.val['y'].mean():.1%}")
         print(f"bar A (pre-specified baselines) = {ev.bar_a} | bar B (incl. post-hoc baselines) = {ev.bar_b}")
@@ -87,7 +89,7 @@ def main() -> None:
             print(f"\nPaired difference to {ref}{tag}; Brier < 0 and PR-AUC > 0 mean better")
             print(d[["model", "metric", "difference", "share_better"]].to_string(index=False))
 
-        if h in (MAIN_HORIZON_H, 1):
+        if h <= 1 or h == MAIN_HORIZON_H:
             for fam in dict.fromkeys([ev.lr_best, ev.lr_best.removesuffix("+platt") + "+platt", ev.bar_b]):
                 print(f"\nCalibration on test: {fam} ({chosen[fam].split('|', 1)[1]}), 5 quantile bins")
                 print(reliability(res["y"], res[fam]).to_string())

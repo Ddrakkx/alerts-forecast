@@ -5,6 +5,7 @@ import pandas as pd
 GRID_STEP = pd.Timedelta(minutes=15)
 HORIZONS_H = (1, 3, 6)
 MAIN_HORIZON_H = 3
+EXTRA_HORIZONS_H = (0.25, 0.5)  # 15 and 30 minutes: additional, exploratory (decision 8)
 
 
 def _ns(values) -> np.ndarray:

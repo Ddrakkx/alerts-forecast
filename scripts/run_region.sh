@@ -10,4 +10,7 @@ export PYTHONUNBUFFERED=1
 python scripts/run_experiment.py --region "$region" > "results/$slug/experiment.txt"
 python scripts/run_robustness.py --region "$region" > "results/$slug/robustness.txt"
 python scripts/run_boosting.py --region "$region" > "results/$slug/boosting.txt"
+# additional short horizons, 15 and 30 minutes (decision 8)
+python scripts/run_experiment.py --region "$region" --horizons 0.25 0.5 > "results/$slug/experiment_short.txt"
+python scripts/run_boosting.py --region "$region" --horizons 0.25 0.5 > "results/$slug/boosting_short.txt"
 echo "done: $region"

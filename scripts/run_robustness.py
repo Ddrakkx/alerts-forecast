@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from alerts_forecast.data import REGION, load_official_regions, load_regions  # noqa: E402
-from alerts_forecast.experiment import configs, evaluate  # noqa: E402
+from alerts_forecast.experiment import configs, evaluate, feature_index, join_features  # noqa: E402
 from alerts_forecast.features import build_features, neighbors_of  # noqa: E402
 from alerts_forecast.metrics import day_block_bootstrap  # noqa: E402
 from alerts_forecast.target import build_frame, main_sample  # noqa: E402
@@ -51,8 +51,8 @@ def run_source(name, regions, data_end, h, boot, all_configs, region, test_weeks
     nbrs = neighbors_of(region)
     test_start = data_end.floor("D") - pd.Timedelta(weeks=test_weeks)
     val_start = test_start - pd.Timedelta(weeks=test_weeks)
-    feats = build_features(regions, region, build_frame(alerts, data_end, 1).index, nbrs)
-    sample = main_sample(build_frame(alerts, data_end, h)).join(feats)
+    feats = build_features(regions, region, feature_index(alerts, data_end, [h]), nbrs)
+    sample = join_features(main_sample(build_frame(alerts, data_end, h)), feats)
     ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
     print(f"\n[{name}] H={h}: test {test_start:%Y-%m-%d}..{data_end:%Y-%m-%d}, bar B = {ev.bar_b} "
           f"({ev.chosen[ev.bar_b].split('|', 1)[1]}), logreg chosen = {ev.chosen[FAMILY].split('|', 1)[1]}")

@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from alerts_forecast.data import REGION, load_regions  # noqa: E402
-from alerts_forecast.experiment import configs, evaluate  # noqa: E402
+from alerts_forecast.experiment import configs, evaluate, feature_index, join_features  # noqa: E402
 from alerts_forecast.features import build_features, neighbors_of  # noqa: E402
 from alerts_forecast.metrics import calibration_slope_intercept, day_block_bootstrap  # noqa: E402
 from alerts_forecast.target import build_frame, main_sample  # noqa: E402
@@ -31,6 +31,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--region", default=REGION)
     ap.add_argument("--boot", type=int, default=1000)
+    ap.add_argument("--horizons", type=float, nargs="+", default=[1, 3])
     args = ap.parse_args()
     regions, data_end = load_regions(ROOT / "data" / "raw" / "volunteer_data_en.csv")
     region = args.region
@@ -39,17 +40,17 @@ def main() -> None:
     print(f"region {region} | neighbours {len(nbrs)}")
     test_start = data_end.floor("D") - pd.Timedelta(weeks=8)
     val_start = test_start - pd.Timedelta(weeks=8)
-    feats = build_features(regions, region, build_frame(alerts, data_end, 1).index, nbrs)
+    feats = build_features(regions, region, feature_index(alerts, data_end, args.horizons), nbrs)
     all_configs = configs(nbrs, boosting=True)
 
-    for h in (1, 3):
-        sample = main_sample(build_frame(alerts, data_end, h)).join(feats)
+    for h in args.horizons:
+        sample = join_features(main_sample(build_frame(alerts, data_end, h)), feats)
         ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
         lr = ev.lr_best
         hgbs = [f for f in ev.chosen if f.startswith("hgb")]
         models = list(dict.fromkeys([ev.bar_b, ev.oracle, lr, *hgbs]))
         table, diffs = day_block_bootstrap(ev.res, models, [ev.bar_b, lr, ev.oracle], n_boot=args.boot)
-        print(f"\n===== H = {h} h | test rows {len(ev.res)}, positive rate {ev.res['y'].mean():.1%} | "
+        print(f"\n===== H = {h:g} h | test rows {len(ev.res)}, positive rate {ev.res['y'].mean():.1%} | "
               f"bar B = {ev.bar_b}, best logistic (by validation) = {lr}, best baseline on test = {ev.oracle} =====")
         rows = []
         for m in models:

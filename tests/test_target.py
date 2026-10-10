@@ -117,3 +117,11 @@ def test_loader_rejects_non_utc_and_unknown_region(tmp_path):
     )
     with pytest.raises(ValueError, match="no alerts"):
         load_volunteer(p2)
+
+
+def test_fifteen_minute_horizon_label_and_grid_end():
+    frame = build_frame(ALERTS, ts("12:07"), horizon_h=0.25)
+    assert frame.index.max() == ts("11:45") and frame.index.max() + pd.Timedelta(minutes=15) <= ts("12:07")
+    y = onset_within(ALERTS, at("10:44", "10:45", "10:46", "11:00"), pd.Timedelta(minutes=15))
+    # (10:44, 10:59] has no start; (10:45, 11:00] contains 11:00; (10:46, 11:01] too; at 11:00 the start is the past
+    assert y.tolist() == [False, True, True, False]
