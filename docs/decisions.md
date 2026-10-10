@@ -295,3 +295,23 @@ A second agent reviewed the repository. I re-computed its main claims with my ow
 - Three statements in my first draft of the new README were not backed by the data and were fixed before the commit: the subset checks were claimed for the
   short horizons (they were run at 1 h and 3 h only), the official source was said to agree for Kharkiv (it is unusable there and points the other way), and
   "every Lviv gain disappeared" (one tiny gain remains).
+
+## 11. Interactive demo (demo/), added after the freeze, without touching frozen code
+- Request: a visual page that shows how the forecast works on one day in Poltava oblast: alerts on a time axis, the forecast moment t,
+  what is known before t and what is hidden after it, the window (t, t+H], and the model's forecast against the baseline.
+- Rule kept: nothing in src/ or scripts/ is changed (tag `holdout-freeze`); everything new is in demo/. The demo imports src/ read-only.
+- demo/build_demo.py calls the same evaluate() as scripts/run_experiment.py for H = 15 min, 30 min, 1 h, 3 h, so the curves are the real
+  out-of-sample walk-forward predictions of the protocol logistic model and of the no-hindsight baseline (bar B) for every 15-minute moment
+  of 55 whole days of the test block. Checked: the model and baseline names and configurations equal those in results/poltavska/.
+  Lanes for the 7 neighbouring oblasts and a "known at t" panel (minutes since the last own alert, own starts in 24 h, neighbours and
+  oblasts under alert) show part of the features.
+- Default day: the test-block day with the most alert starts in Poltava (2026-09-23, 15 starts), a plain rule so the page has something to show.
+  The page says that the test block has been looked at many times, so it explains the method and is not a new result.
+- demo/index.html is one self-contained file (data inlined, about 0.64 MB, no external libraries), built from demo/template.html;
+  demo/data.js is a local cache and not committed. Reason: the app's preview pane opened local files as static snapshots and did not load
+  a separate data file, which is also how a reviewer might open it.
+- Checked in the browser: light and dark theme, desktop and phone width, all 55 days x 4 horizons x reveal on/off x 3 moments
+  rendered without a script error (1320 renders).
+- Mistakes on the way: a scripted edit failed on an escaped line break (same trap as before) and the next command then recomputed the data
+  instead of only rebuilding the page (harmless: the output was byte-identical, which also confirms determinism); the page first stayed
+  empty because Python wrote horizon keys as "1.0"/"3.0" while the page looked up "1"/"3"; labels overlapped in the first render. All fixed.

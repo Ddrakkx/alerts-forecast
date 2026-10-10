@@ -15,6 +15,8 @@ leak-free evaluation, not a big number.
 **Львівська:** стійкого результату немає, а сам ряд даних під сумнівом. Висновки кілька разів змінювались після перевірок, зокрема після
 незалежної рецензії іншого агента; усе описано в [docs/decisions.md](docs/decisions.md). Тест на справді нових даних заздалегідь зареєстровано (рішення 9).
 
+**Interactive demo:** open [demo/index.html](demo/index.html) in a browser (one self-contained file; download it or clone the repo). It shows one day in Poltava oblast: alerts on a time axis, the forecast moment t, what the model knows before t and what is hidden, the window (t, t+H], and the model's real out-of-sample forecast against the baseline. Built by `python demo/build_demo.py` (decision 11).
+
 ## Main results
 
 Test block = last 8 weeks (2026-08-14 .. 2026-10-09, 57 Kyiv days, about 4,500 forecast moments per oblast and horizon).
@@ -246,6 +248,7 @@ Results are deterministic (fixed seeds). The outputs of the runs used in this RE
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
 | `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, the review and the holdout pre-registration |
 | `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
+| `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only) |
 
 ## License
 

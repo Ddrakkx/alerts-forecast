@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прогноз тривоги: як це працює</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --model: #2a78d6; --base: #eb6834;
+    --alert: #6b6a65; --alert-nbr: #a9a8a1; --window: rgba(11,11,11,0.07); --hide: rgba(11,11,11,0.05); --hatch: rgba(11,11,11,0.13);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --model: #3987e5; --base: #d95926;
+      --alert: #b3b2aa; --alert-nbr: #6e6d68; --window: rgba(255,255,255,0.08); --hide: rgba(255,255,255,0.04); --hatch: rgba(255,255,255,0.12);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --model: #3987e5; --base: #d95926;
+    --alert: #b3b2aa; --alert-nbr: #6e6d68; --window: rgba(255,255,255,0.08); --hide: rgba(255,255,255,0.04); --hatch: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .lead { color: var(--ink2); margin: 0 0 18px; max-width: 820px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin: 0 0 12px; }
+  .controls label { color: var(--ink2); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  select, button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .seg { display: inline-flex; gap: 4px; }
+  .slider-row { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--ink2); }
+  .tlabel { font-variant-numeric: tabular-nums; min-width: 96px; font-weight: 600; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 8px; margin: 0 0 14px; }
+  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--ink); }
+  .card .sub { font-size: 12.5px; color: var(--ink2); margin: 0 0 6px; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { fill: var(--ink2); font-size: 11px; font-family: inherit; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tile .k { font-size: 12.5px; color: var(--ink2); display: flex; align-items: center; gap: 8px; }
+  .tile .v { font-size: 28px; font-weight: 600; margin-top: 2px; }
+  .tile .n { font-size: 12.5px; color: var(--ink2); margin-top: 2px; }
+  .key { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; }
+  .known { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 18px; font-size: 13.5px; }
+  .known div span { color: var(--ink2); }
+  .banner { font-size: 13.5px; padding: 8px 10px; border-radius: 8px; background: var(--window); margin: 6px 0 8px; display: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); margin: 2px 0 6px; }
+  .tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px;
+         padding: 7px 9px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); display: none; z-index: 10; max-width: 280px; }
+  .tip b { font-weight: 600; }
+  .tip .row { display: flex; align-items: center; gap: 6px; }
+  details { margin: 0 0 14px; }
+  summary { cursor: pointer; color: var(--ink2); font-size: 13.5px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--ink2); font-weight: 600; }
+  .note { font-size: 12.5px; color: var(--ink2); max-width: 900px; }
+  .note p { margin: 6px 0; }
+  @media (max-width: 720px) {
+    .grid3 { grid-template-columns: 1fr; }
+    .known { grid-template-columns: 1fr; }
+    .tile .v { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Як працює прогноз: одна доба в Полтавській області</h1>
+  <p class="lead">Рухайте момент прогнозу <b>t</b>. Ліворуч від нього все, що модель уже знає; праворуч майбутнє, якого вона не бачить.
+    Питання: чи <b>почнеться</b> нова тривога у вікні (t, t+H]? Нижче справжні прогнози моделі й бейзлайна, зроблені
+    walk-forward без даних із майбутнього.</p>
+
+  <div class="controls">
+    <label>Доба <select id="day"></select></label>
+    <label>Горизонт H <span class="seg" id="hseg"></span></label>
+    <label><input type="checkbox" id="reveal"> Показати майбутнє (відповідь)</label>
+  </div>
+  <div class="slider-row">
+    <button id="prev" aria-label="На 15 хвилин назад">◀</button>
+    <button id="play" aria-label="Відтворення">▶</button>
+    <button id="next" aria-label="На 15 хвилин вперед">▶▶</button>
+    <input type="range" id="slider" min="0" max="95" step="1" value="56" aria-label="Момент прогнозу t">
+    <span class="tlabel" id="tlabel"></span>
+  </div>
+
+  <div class="grid3">
+    <div class="tile"><div class="k"><span class="key" style="border-color: var(--model)"></span>Прогноз моделі</div><div class="v" id="vm">—</div><div class="n" id="nm"></div></div>
+    <div class="tile"><div class="k"><span class="key" style="border-color: var(--base)"></span>Прогноз бейзлайна</div><div class="v" id="vb">—</div><div class="n" id="nb"></div></div>
+    <div class="tile"><div class="k">Відповідь: чи почалась тривога у вікні</div><div class="v" id="vy">сховано</div><div class="n" id="ny"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Тривоги на осі часу (київський час)</h2>
+    <p class="sub">Сірі смуги: тривоги. Ліворуч від t відомо модель; заштрихована частина праворуч від неї схована. Рамка: вікно (t, t+H], у якому питаємо про старт.</p>
+    <div class="banner" id="banner"></div>
+    <div id="timeline"></div>
+  </div>
+
+  <div class="card">
+    <h2>Що відомо моделі в момент t</h2>
+    <div class="known" id="known"></div>
+    <p class="sub" style="margin-top:8px">Це частина ознак моделі; усі вони рахуються лише з тривог, що почались до t (див. README, розділ про витік даних).</p>
+  </div>
+
+  <div class="card">
+    <h2>Прогнози за добу: ймовірність старту тривоги у вікні (t, t+H]</h2>
+    <div class="legend" id="legend"></div>
+    <div id="forecast"></div>
+    <p class="sub">Кожна точка зроблена у свій момент і бачила лише своє минуле. Риски внизу: моменти, коли тривога справді почалась у вікні
+      (суцільні, якщо відповідь уже відома в момент t). Розриви: у ці моменти тривога триває, тож вони не входять у вибірку.</p>
+  </div>
+
+  <details>
+    <summary>Таблиця за добу (ті самі числа без графіка)</summary>
+    <div id="table"></div>
+  </details>
+
+  <div class="note" id="note"></div>
+</main>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>/*__DEMO_DATA__*/</script>
+<script>
+(() => {
+  const D = window.DEMO, M = D.meta, AX = M.axis_end_min;
+  const LANE_NAMES = { "Poltavska oblast": "Полтавська", "Chernihivska oblast": "Чернігівська", "Sumska oblast": "Сумська",
+    "Kharkivska oblast": "Харківська", "Dnipropetrovska oblast": "Дніпропетровська", "Kirovohradska oblast": "Кіровоградська",
+    "Cherkaska oblast": "Черкаська", "Kyivska oblast": "Київська" };
+  const lane = n => LANE_NAMES[n] || n;
+  const hk = h => Number.isInteger(h) ? h.toFixed(1) : String(h);  // keys were written by Python: "0.25", "0.5", "1.0", "3.0"
+  const state = { day: M.default_day, hi: 3, k: 56, reveal: false, timer: null };
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v); if (parent) parent.appendChild(e); return e; };
+  const hhmm = m => { const d = Math.floor(m / 1440), r = ((m % 1440) + 1440) % 1440; const s = String(Math.floor(r / 60)).padStart(2, "0") + ":" + String(Math.floor(r % 60)).padStart(2, "0"); return d > 0 ? s + " (+1)" : d < 0 ? s + " (−1)" : s; };
+  const pct = p => p == null ? "—" : (p < 0.1 ? (p * 100).toFixed(1) : (p * 100).toFixed(0)) + "%";
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const tip = $("tip");
+  const showTip = (ev, nodes) => { tip.replaceChildren(...nodes); tip.style.display = "block";
+    const x = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8), y = Math.min(ev.clientY + 14, window.innerHeight - tip.offsetHeight - 8);
+    tip.style.left = x + "px"; tip.style.top = y + "px"; };
+  const hideTip = () => { tip.style.display = "none"; };
+  const line = (text, strong, color) => { const d = document.createElement("div"); d.className = "row";
+    if (color) { const k = document.createElement("span"); k.className = "key"; k.style.borderColor = color; d.appendChild(k); }
+    if (strong) { const b = document.createElement("b"); b.textContent = strong; d.appendChild(b); }
+    d.appendChild(document.createTextNode(text)); return d; };
+
+  // ---------- controls
+  const daySel = $("day");
+  Object.keys(D.days).forEach(d => { const o = document.createElement("option"); o.value = d;
+    o.textContent = `${d} · ${M.starts_per_day[d]} тривог`; daySel.appendChild(o); });
+  daySel.value = state.day;
+  daySel.onchange = () => { state.day = daySel.value; render(); };
+  M.horizons.forEach((h, i) => { const b = document.createElement("button"); b.textContent = h.label; b.onclick = () => { state.hi = i; render(); };
+    $("hseg").appendChild(b); });
+  $("reveal").onchange = e => { state.reveal = e.target.checked; render(); };
+  const slider = $("slider");
+  slider.oninput = () => { state.k = +slider.value; render(); };
+  const step = d => { state.k = Math.max(0, Math.min(95, state.k + d)); render(); };
+  $("prev").onclick = () => step(-1); $("next").onclick = () => step(1);
+  $("play").onclick = () => {
+    if (state.timer) { clearInterval(state.timer); state.timer = null; $("play").textContent = "▶"; return; }
+    $("play").textContent = "❚❚";
+    state.timer = setInterval(() => { if (state.k >= 95) { $("play").click(); return; } step(1); }, 450);
+  };
+  window.addEventListener("resize", () => render());
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render());
+
+  // ---------- geometry shared by both charts (same x scale, so they line up)
+  const geom = (container) => { const W = Math.max(320, container.clientWidth); const L = W < 560 ? 86 : 118, R = 12; return { W, L, R, x: m => L + (m / AX) * (W - L - R) }; };
+
+  function hatch(svg, id) {
+    const defs = el("defs", {}, svg);
+    const p = el("pattern", { id, width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+    el("rect", { width: 6, height: 6, fill: css("--hide") }, p);
+    el("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: css("--hatch"), "stroke-width": 2 }, p);
+  }
+
+  function axis(svg, g, y0, y1) {
+    for (let h = 0; h <= AX / 60; h += 3) {
+      const X = g.x(h * 60);
+      el("line", { x1: X, x2: X, y1: y0, y2: y1, stroke: css("--grid"), "stroke-width": 1 }, svg);
+      const t = el("text", { x: X, y: y1 + 14, "text-anchor": "middle" }, svg); t.textContent = hhmm(h * 60).replace(" (+1)", h >= 24 ? "+" : "");
+    }
+  }
+
+  // ---------- timeline
+  function renderTimeline(day, m, H) {
+    const box = $("timeline"); const g = geom(box);
+    const lanes = M.lanes, top = 26, laneH = [24, ...lanes.slice(1).map(() => 12)], gap = 6;
+    const ys = []; let y = top; laneH.forEach((h, i) => { ys.push(y); y += h + gap + (i === 0 ? 22 : 0); });
+    const bottom = y; const Ht = bottom + 22;
+    const svg = el("svg", { viewBox: `0 0 ${g.W} ${Ht}`, role: "img", "aria-label": "Тривоги в Полтавській і сусідніх областях, момент t і вікно прогнозу" });
+    hatch(svg, "hide");
+    axis(svg, g, top - 6, bottom);
+    // lane labels
+    lanes.forEach((n, i) => { const t = el("text", { x: g.L - 8, y: ys[i] + laneH[i] / 2 + 4, "text-anchor": "end" }, svg); t.textContent = lane(n);
+      if (i === 0) { t.setAttribute("style", `fill:${css("--ink")};font-weight:600;font-size:12px`); } });
+    const sep = el("line", { x1: g.L, x2: g.W - g.R, y1: ys[1] - 19, y2: ys[1] - 19, stroke: css("--grid") }, svg);
+    const nbLabel = el("text", { x: g.L, y: ys[1] - 6 }, svg); nbLabel.textContent = "сусідні області (ознаки моделі)"; nbLabel.setAttribute("style", "font-size:10px");
+    // window and hidden future
+    const xt = g.x(m), xw = g.x(Math.min(AX, m + H * 60));
+    if (!state.reveal) el("rect", { x: xt, y: top - 6, width: g.W - g.R - xt, height: bottom - top + 6, fill: "url(#hide)" }, svg);
+    el("rect", { x: xt, y: top - 6, width: Math.max(1, xw - xt), height: bottom - top + 6, fill: css("--window"), stroke: css("--ink2"), "stroke-width": 1, rx: 3 }, svg);
+    const wl = el("text", { x: xt + 4, y: top - 10 }, svg); wl.textContent = `вікно (t, t+${M.horizons[state.hi].label}]`; wl.setAttribute("style", `fill:${css("--ink")};font-size:11px`);
+    // alerts
+    lanes.forEach((n, i) => {
+      const color = i === 0 ? css("--alert") : css("--alert-nbr");
+      (day.alerts[i] || []).forEach(([s, e, naive]) => {
+        const s0 = Math.max(s, 0), e0 = Math.min(e, AX); if (e0 <= 0 || s0 >= AX) return;
+        const yy = ys[i], hh = laneH[i];
+        const add = (a, b, opacity, dashed) => { if (b <= a) return null;
+          const r = el("rect", { x: g.x(a), y: yy, width: Math.max(1.5, g.x(b) - g.x(a)), height: hh, rx: i === 0 ? 4 : 2, fill: color, "fill-opacity": opacity }, svg);
+          if (dashed) { r.setAttribute("stroke", color); r.setAttribute("stroke-width", 1); r.setAttribute("fill-opacity", 0.18); }
+          r.addEventListener("pointermove", ev => showTip(ev, [line(`${hhmm(s)}–${hhmm(e)} (${Math.round(e - s)} хв)`, lane(n) + ": "),
+            ...(naive ? [line("кінець вигаданий (+30 хв): у реальному часі невідомий")] : []),
+            ...(s > m ? [line("почнеться після t: модель цього не бачить")] : e > m ? [line("у момент t ще триває: кінець невідомий")] : [])]));
+          r.addEventListener("pointerleave", hideTip); return r; };
+        if (s > m) { if (state.reveal) add(s0, e0, 0.35, true); }               // future alert: hidden unless revealed
+        else if (e > m) { add(s0, Math.min(m, e0), naive ? 0.55 : 1);            // running at t: known part only
+          if (state.reveal) add(m, e0, 0.35, true);
+          else if (i === 0) { const a = el("text", { x: xt + 4, y: yy + hh / 2 + 4 }, svg); a.textContent = "триває… кінець невідомий"; a.setAttribute("style", "font-size:10.5px"); } }
+        else add(s0, e0, naive ? 0.55 : 1);                                       // finished before t: fully known
+      });
+    });
+    // t line
+    el("line", { x1: xt, x2: xt, y1: top - 18, y2: bottom, stroke: css("--ink"), "stroke-width": 2 }, svg);
+    const tl = el("text", { x: xt, y: top - 20, "text-anchor": "middle" }, svg); tl.textContent = "t"; tl.setAttribute("style", `fill:${css("--ink")};font-weight:700;font-size:13px`);
+    // the answer: first Poltava start inside the window
+    const next = day.next[state.k];
+    if (state.reveal && next != null && next <= m + H * 60) {
+      const X = g.x(next); el("path", { d: `M${X},${ys[0] - 2} l-6,-9 h12 z`, fill: css("--ink") }, svg);
+      const lab = el("text", { x: X + 8, y: ys[0] - 4 }, svg); lab.textContent = `старт ${hhmm(next)} → y = 1`; lab.setAttribute("style", `fill:${css("--ink")};font-weight:600`);
+    }
+    box.replaceChildren(svg);
+  }
+
+  // ---------- forecast chart
+  function renderForecast(day, m, H) {
+    const box = $("forecast"); const g = geom(box);
+    const hd = day.h[hk(M.horizons[state.hi].h)], top = 10, ph = 170, Ht = top + ph + 40;
+    const vals = [...hd.pm, ...hd.pb].filter(v => v != null);
+    const ymax = Math.min(1, Math.max(0.2, Math.ceil((Math.max(...vals, 0) + 0.02) * 10) / 10));
+    const yv = p => top + ph - (p / ymax) * ph;
+    const svg = el("svg", { viewBox: `0 0 ${g.W} ${Ht}`, role: "img", "aria-label": "Ймовірність старту тривоги у вікні: модель і бейзлайн протягом доби" });
+    axis(svg, g, top, top + ph);
+    for (let i = 0; i <= 4; i++) { const p = ymax * i / 4, Y = yv(p);
+      el("line", { x1: g.L, x2: g.W - g.R, y1: Y, y2: Y, stroke: css("--grid") }, svg);
+      const t = el("text", { x: g.L - 8, y: Y + 4, "text-anchor": "end" }, svg); t.textContent = (p * 100).toFixed(0) + "%"; }
+    el("line", { x1: g.L, x2: g.W - g.R, y1: top + ph, y2: top + ph, stroke: css("--axis") }, svg);
+    const mins = hd.pm.map((_, k) => k * 15);
+    const series = [["pm", css("--model")], ["pb", css("--base")]];
+    series.forEach(([key, color]) => {
+      [[true], [false]].forEach(([pastPart]) => {
+        let d = "", pen = false;
+        hd[key].forEach((v, k) => { const mm = mins[k]; const inPart = pastPart ? mm <= m : mm >= m;
+          if (v == null || !inPart) { pen = false; return; }
+          d += (pen ? "L" : "M") + g.x(mm).toFixed(1) + "," + yv(v).toFixed(1); pen = true; });
+        if (d) el("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round",
+          "stroke-opacity": pastPart || state.reveal ? 1 : 0.3 }, svg);
+      });
+    });
+    // label ticks: y = 1 moments; solid when the answer is already known at t (window closed), otherwise only when revealed
+    hd.y.forEach((y, k) => { if (!y || !hd.in[k]) return; const mm = mins[k]; const known = mm + H * 60 <= m;
+      if (!known && !state.reveal) return;
+      el("rect", { x: g.x(mm) - 1, y: top + ph - 9, width: 2.5, height: 8, fill: css("--ink2"), "fill-opacity": known ? 1 : 0.35 }, svg); });
+    // current t
+    const xt = g.x(m); el("line", { x1: xt, x2: xt, y1: top, y2: top + ph, stroke: css("--ink"), "stroke-width": 1 }, svg);
+    series.forEach(([key, color]) => { const v = hd[key][state.k]; if (v == null) return;
+      el("circle", { cx: xt, cy: yv(v), r: 5, fill: color, stroke: css("--surface"), "stroke-width": 2 }, svg); });
+    // crosshair + tooltip; click moves t
+    const cross = el("line", { x1: 0, x2: 0, y1: top, y2: top + ph, stroke: css("--axis"), "stroke-width": 1, visibility: "hidden" }, svg);
+    const hit = el("rect", { x: g.L, y: top, width: g.W - g.L - g.R, height: ph + 14, fill: "transparent", style: "cursor:pointer" }, svg);
+    const nearest = ev => { const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * (g.W / r.width);
+      const mm = (px - g.L) / (g.W - g.L - g.R) * AX; return Math.max(0, Math.min(95, Math.round(mm / 15))); };
+    hit.addEventListener("pointermove", ev => { const k = nearest(ev), mm = k * 15; cross.setAttribute("x1", g.x(mm)); cross.setAttribute("x2", g.x(mm)); cross.setAttribute("visibility", "visible");
+      const known = mm + H * 60 <= m || state.reveal;
+      const rows = hd.in[k] ? [line(" модель", pct(hd.pm[k]), css("--model")), line(" бейзлайн", pct(hd.pb[k]), css("--base")),
+        line(known ? (hd.y[k] ? "y = 1: тривога почалась у вікні" : "y = 0: старту у вікні не було") : "відповідь ще невідома в момент t")]
+        : [line("тривога триває: момент не у вибірці")];
+      showTip(ev, [line("", hhmm(mm)), ...rows]); });
+    hit.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); hideTip(); });
+    hit.addEventListener("click", ev => { state.k = nearest(ev); render(); });
+    box.replaceChildren(svg);
+  }
+
+  // ---------- readouts
+  function renderReadouts(day, m, H) {
+    const hm = M.horizons[state.hi], hd = day.h[hk(hm.h)], k = state.k;
+    const inS = hd.in[k];
+    $("vm").textContent = inS ? pct(hd.pm[k]) : "—"; $("vb").textContent = inS ? pct(hd.pb[k]) : "—";
+    $("nm").textContent = `${hm.model} (${hm.model_cfg})`; $("nb").textContent = `${hm.base} (${hm.base_cfg}), обраний на валідації`;
+    const next = day.next[k];
+    if (!inS) { $("vy").textContent = "—"; $("ny").textContent = "момент не у вибірці"; }
+    else if (!state.reveal) { $("vy").textContent = "сховано"; $("ny").textContent = "увімкніть «Показати майбутнє»"; }
+    else { $("vy").textContent = hd.y[k] ? "так, y = 1" : "ні, y = 0";
+      $("ny").textContent = next != null ? `наступний старт: ${hhmm(next)}` : "наступного старту в даних немає"; }
+    const b = $("banner");
+    if (!inS) { b.style.display = "block"; b.textContent = "У момент t у Полтавській триває тривога. Такі моменти не входять у вибірку: питання «чи почнеться нова тривога» тут не ставиться, прогноз не робиться."; }
+    else b.style.display = "none";
+    const nb = day.nbr[k].map(i => lane(M.lanes[i + 1]));
+    const items = [
+      ["Остання тривога в Полтавській закінчилась", day.active[k] ? "ще триває" : day.since[k] == null ? "давно" : `${day.since[k]} хв тому`],
+      ["Стартів у Полтавській за останні 24 год", String(day.s24[k])],
+      ["Сусідні області під тривогою зараз", nb.length ? nb.join(", ") : "жодної"],
+      ["Областей під тривогою по всій країні", String(day.cty[k])],
+    ];
+    $("known").replaceChildren(...items.map(([a, v]) => { const d = document.createElement("div"); const s = document.createElement("span");
+      s.textContent = a + ": "; d.appendChild(s); const bb = document.createElement("b"); bb.textContent = v; d.appendChild(bb); return d; }));
+    $("tlabel").textContent = "t = " + hhmm(m);
+    slider.value = k;
+    [...$("hseg").children].forEach((btn, i) => btn.setAttribute("aria-pressed", String(i === state.hi)));
+    const lg = $("legend");
+    lg.replaceChildren(line(` модель: ${hm.model}`, "", css("--model")), line(` бейзлайн: ${hm.base} (${hm.base_cfg})`, "", css("--base")),
+      line(" ▮ риска: тривога справді почалась у вікні", ""));
+  }
+
+  function renderTable(day) {
+    const hm = M.horizons[state.hi], hd = day.h[hk(hm.h)];
+    const t = document.createElement("table"); const head = t.insertRow();
+    ["t", "у вибірці", "модель", "бейзлайн", `y (старт у вікні ${hm.label})`].forEach(h => { const th = document.createElement("th"); th.textContent = h; head.appendChild(th); });
+    hd.in.forEach((ok, k) => { const r = t.insertRow();
+      [hhmm(k * 15), ok ? "так" : "ні (тривога триває)", ok ? pct(hd.pm[k]) : "—", ok ? pct(hd.pb[k]) : "—", ok ? String(hd.y[k]) : "—"]
+        .forEach(v => { r.insertCell().textContent = v; }); });
+    $("table").replaceChildren(t);
+  }
+
+  function renderNote() {
+    const p = (txt) => { const e = document.createElement("p"); e.textContent = txt; return e; };
+    $("note").replaceChildren(
+      p(`Дані: волонтерський набір (Vadimkin/ukrainian-air-raid-sirens-dataset), знімок ${M.snapshot.slice(0, 7)}; доби з тестового блоку ${M.test_block}. ` +
+        `За замовчуванням показано добу з найбільшою кількістю тривог у Полтавській (просте правило, щоб було що дивитись).`),
+      p(`Прогнози: справжні позавибіркові прогнози з замороженого конвеєра (${M.pipeline}). Модель — логістична сім'я, яку протокол обрав на валідації ` +
+        `для кожного горизонту; бейзлайн — найкращий бейзлайн на валідації (без підглядання в тест). Перенавчання щотижня, бейзлайн «recent_level» щодня.`),
+      p(`Чесно: тестовий блок уже багато разів переглядався під час роботи, тож ця сторінка — пояснення того, як працює прогноз, а не новий результат. ` +
+        `Головний висновок проєкту для Полтавської: моделі не обігрують найсильніший простий бейзлайн (README).`));
+  }
+
+  function render() {
+    const day = D.days[state.day], m = state.k * 15, H = M.horizons[state.hi].h;
+    renderReadouts(day, m, H); renderTimeline(day, m, H); renderForecast(day, m, H); renderTable(day);
+  }
+  renderNote(); render();
+})();
+</script>
+</body>
+</html>
