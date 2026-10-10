@@ -382,3 +382,6 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   in the log within the last 7 days (stretches of more than 5 minutes without a successful poll), not only the gap before the logger started.
   An alert that started and ended inside a gap is missing from the history; one that ended inside a gap gets the restart time as its end.
   Restart order: the logger first, the forecaster after its first poll, so the artificial "all-clear" at the logger's restart can never be forecast.
+- Report fix (no forecast changed): an answer window that overlaps a gap in the log stays unknown unless a start was seen in it, because alerts that
+  started and ended inside the gap are not in the log. For the first forecast the 15 and 30 min answers are known (no alert; model 3% / 7%,
+  baseline 4% / 16%), the 1 h and 3 h windows overlap the switch-off and stay open until the volunteer data (which covers the gap) arrive.

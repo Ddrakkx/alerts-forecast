@@ -1,0 +1,5 @@
+t,H,counted,complete_24h,p_model,p_baseline,emap_any,emap_red
+2026-10-10T14:12:29+00:00,15 min,True,False,0.0343,0.0359,0.0,0.0
+2026-10-10T14:12:29+00:00,30 min,True,False,0.07,0.1586,0.0,0.0
+2026-10-10T14:12:29+00:00,1 h,True,False,0.1704,0.3084,,
+2026-10-10T14:12:29+00:00,3 h,True,False,0.397,0.6685,,

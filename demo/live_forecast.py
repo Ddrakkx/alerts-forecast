@@ -219,12 +219,14 @@ def report() -> None:
     closed, open_ = intervals(load_log(LOG))
     starts = [(s, lvl) for o, r, s, e, lvl in closed if o == POLTAVA_UA] + [(s, lvl) for (o, r), (s, lvl) in open_.items() if o == POLTAVA_UA]
     last_poll = last_successful_poll(LOG / "polls.csv")  # not the last event: quiet minutes write no event
+    gaps = log_gaps(LOG / "polls.csv")
     rows = []
     for rec in recs:
         t = ts(rec["t"])
         for label, h in [(lb, h) for h, lb in HORIZONS]:
             end = t + pd.Timedelta(hours=h)
-            known = last_poll >= end + pd.Timedelta(minutes=2)
+            # a "no" is only known if the whole window was logged: no gap may overlap it (a seen start is a sure "yes" anyway)
+            known = last_poll >= end + pd.Timedelta(minutes=2) and not any(a < end and b > t for a, b in gaps)
             any_ = any(t < s <= end for s, _ in starts)
             red = any(t < s <= end and lvl == "red" for s, lvl in starts)
             fc = rec["forecasts"][label]

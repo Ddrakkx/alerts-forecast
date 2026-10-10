@@ -1,0 +1,12 @@
+report at 2026-10-10T16:40:53+00:00, last log poll 2026-10-10 16:40:29+00:00
+
+15 min  emap_any: n=1, alerts=0, Brier model 0.0012, baseline 0.0013, model closer in 1 of 1
+15 min  emap_red: n=1, alerts=0, Brier model 0.0012, baseline 0.0013, model closer in 1 of 1
+30 min  emap_any: n=1, alerts=0, Brier model 0.0049, baseline 0.0252, model closer in 1 of 1
+30 min  emap_red: n=1, alerts=0, Brier model 0.0049, baseline 0.0252, model closer in 1 of 1
+1 h     emap_any: no answered forecasts yet
+1 h     emap_red: no answered forecasts yet
+3 h     emap_any: no answered forecasts yet
+3 h     emap_red: no answered forecasts yet
+
+Illustration only (decision 13): too few events for any significance. Primary answers (volunteer data) come later.
