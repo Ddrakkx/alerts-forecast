@@ -170,3 +170,17 @@ Template for each entry:
   (0.2674 vs 0.2283 for W=3 d), a choice the validation block could not foresee. I do not change the rule after seeing it; it is a result.
 - Safety for quiet oblasts: models fall back to the base rate when a training window has a single class; Platt scaling keeps raw
   probabilities when its calibration part has a single class (tested).
+
+### Result of decision 7 (results/<oblast>/, results/summary.md)
+- Poltavska, against the strongest simple baseline (recent level, last 30 days, refit daily): no demonstrated gain for logistic regression or boosting at
+  H = 1, 3 or 6 (every paired interval contains zero). The earlier "H=1 gain over the constant, +0.066 [0.034, 0.095]" and "boosting criterion met at H=1" were
+  gains over static baselines and are superseded; the README says so.
+- Kyivska, Kharkivska, Lvivska, against the best baseline on the test block (strict, chosen with hindsight): PR-AUC gains at H=1 (+0.102, +0.034, +0.041), Brier gains
+  at Kyivska H=1 (-0.0168 [-0.0270, -0.0082]), Kharkivska H=1 (-0.0092 [-0.0139, -0.0043]), Lvivska H=3 (-0.0116 [-0.0244, -0.0006]). Out of 16 model-horizon cells (H=1, 3) 5 have a Brier interval excluding zero.
+- The validation-chosen bar is fragile under a regime change: in Kyivska it picked a static baseline (recent_activity, Brier 0.2639 at H=1) while the best baseline
+  on test was recent_level (0.2351). The strict reference was added after seeing this; it is optimistic for the baselines and is reported next to the usual one.
+- The official file cannot serve as a check for Kharkivska (after merging raions the oblast is almost always under alert: 386 moments without alert in the check period
+  against about 4,200 in the volunteer data) and Lvivska (0.9% positive against 38%). For Poltavska and Kyivska the direction agrees with the volunteer data.
+- Mistakes of mine in this step: the first summary script was written with a string that the shell mangled (a line break inside a quoted string), twice; it stopped a
+  command chain before a commit. Two statements in the first README draft were not backed by the data (a count of 6 significant Brier cells instead of 5, a claim about
+  Lviv's hour-of-week signal) and one was wrong (the C statement) until I counted; all fixed before the commit.
