@@ -199,3 +199,17 @@ Template for each entry:
 - Bug found before the first run: features were built on the 1-hour grid ("the longest"), but the 15-minute grid reaches 45 minutes further.
   Logistic regression would have crashed on NaN, boosting would have accepted NaN silently. Fixed: features are built on the grid of the
   shortest horizon, and `join_features` refuses any row without features (tested). Main results must stay identical; checked after the run.
+
+### First results of decision 8, and one more correction of the strict reference
+- Main results stayed identical after the feature-grid fix (Poltava experiment.txt and the main tables of summary.md compared, equal).
+- First run of 15/30 min against the strict reference showed PR-AUC gains in all four oblasts, Poltava included (15 min: +0.021 [0.012, 0.033]).
+  But the strict reference had been chosen by BRIER, and the best baseline by PR-AUC can be another one. Diagnostic for Poltava (post hoc):
+  against the baseline with the best PR-AUC on the test block (raw hour of week: 0.089 at 15 min, 0.174 at 30 min) the gains are
+  +0.008 [-0.006, +0.021] and +0.012 [-0.019, +0.037] for logistic regression, +0.007 / +0.022 (intervals contain 0) for boosting. So the
+  Poltava "gain" at short horizons came from comparing PR-AUC with a reference chosen for Brier.
+- Rule from now on: the strict reference is chosen separately for each metric (best baseline on the test block by Brier for dBrier, by PR-AUC
+  for dPR-AUC). All oblasts and horizons are re-run with it; the summary shows both reference names when they differ.
+- Neighbours and country, first reading (comparisons within the same model, not affected by the reference choice): clear help in Kyivska
+  (every horizon, largest at 30 min - 1 h) and Kharkivska (15 and 30 min); in Poltavska only for boosting (30 min, 1 h), not for logistic
+  regression; in Lvivska none, and at 15/30 min neighbours make the logistic Brier worse (+0.0048 [+0.0009, +0.0102] at 15 min).
+  My advance expectation "strongest at 15 min" holds only partly: in Kyivska the gain peaks at 30 min - 1 h.

@@ -5,7 +5,7 @@ import pandas as pd
 
 from .baselines import constant_rate, hour_of_week_rate, make_smoothed_hour_of_week, recent_activity_rate
 from .features import feature_sets
-from .metrics import brier
+from .metrics import brier, pr_auc
 from .models import make_hgb, make_logreg, make_platt
 from .target import GRID_STEP, make_grid
 from .walkforward import walk_forward
@@ -94,6 +94,7 @@ class Evaluation:
     bar_b: str        # best including the post-hoc baselines (smoothed hour of week, recent level)
     lr_best: str      # logistic family with the best validation Brier
     oracle: str       # baseline family with the best Brier on the TEST block: a strict, optimistic-for-baselines reference
+    oracle_pr: str    # the same for PR-AUC (the best baseline differs by metric)
     res: pd.DataFrame  # test: y, day, prev_naive and one column per family (chosen configuration)
 
 
@@ -117,4 +118,5 @@ def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Ev
         res[fam] = test[c]
     baselines = [f for f in chosen if f in (*PRESET_BASELINES, *POSTHOC_FAMILIES)]
     oracle = min(baselines, key=lambda f: brier(res["y"], res[f]))
-    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, oracle, res)
+    oracle_pr = max(baselines, key=lambda f: pr_auc(res["y"], res[f]))
+    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, oracle, oracle_pr, res)

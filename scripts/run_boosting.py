@@ -48,10 +48,11 @@ def main() -> None:
         ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
         lr = ev.lr_best
         hgbs = [f for f in ev.chosen if f.startswith("hgb")]
-        models = list(dict.fromkeys([ev.bar_b, ev.oracle, lr, *hgbs]))
-        table, diffs = day_block_bootstrap(ev.res, models, [ev.bar_b, lr, ev.oracle], n_boot=args.boot)
+        models = list(dict.fromkeys([ev.bar_b, ev.oracle, ev.oracle_pr, lr, *hgbs]))
+        table, diffs = day_block_bootstrap(ev.res, models, [ev.bar_b, lr, ev.oracle, ev.oracle_pr], n_boot=args.boot)
         print(f"\n===== H = {h:g} h | test rows {len(ev.res)}, positive rate {ev.res['y'].mean():.1%} | "
-              f"bar B = {ev.bar_b}, best logistic (by validation) = {lr}, best baseline on test = {ev.oracle} =====")
+              f"bar B = {ev.bar_b}, best logistic (by validation) = {lr}, best baseline on test by Brier = {ev.oracle}, "
+              f"by PR-AUC = {ev.oracle_pr} =====")
         rows = []
         for m in models:
             b = table[(table.model == m) & (table.metric == "brier")].iloc[0]
@@ -61,7 +62,7 @@ def main() -> None:
                          "test_brier [95%]": fmt(b.value, b.lo, b.hi), "test_pr_auc [95%]": fmt(p.value, p.lo, p.hi, 3),
                          "cal_slope": round(slope, 2)})
         print(pd.DataFrame(rows).to_string(index=False))
-        for ref in dict.fromkeys([lr, ev.bar_b, ev.oracle]):
+        for ref in dict.fromkeys([lr, ev.bar_b, ev.oracle, ev.oracle_pr]):
             d = diffs[(diffs.vs == ref) & diffs.model.str.startswith("hgb")].copy()
             d = d.assign(difference=[fmt(r.diff, r.lo, r.hi) for r in d.itertuples()], share_better=d.share_better.round(3))
             print(f"\nPaired difference to {ref}; Brier < 0 and PR-AUC > 0 mean better")

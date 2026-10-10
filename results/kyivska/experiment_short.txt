@@ -1,0 +1,225 @@
+region Kyivska oblast | neighbours 6 | data end 2026-10-09 05:12 UTC | validation 2026-06-19..2026-08-14 | test 2026-08-14..2026-10-09
+
+===== H = 0.25 h   [81s] =====
+test rows 4738, days 57, positive rate 11.8%; validation rows 4962, positive rate 4.5%
+bar A (pre-specified baselines) = recent_activity | bar B (incl. post-hoc baselines) = recent_activity
+best baseline on the test block (oracle, strict) = recent_level
+                       family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
+                     constant         |90d     0.0433 0.1073 [0.0932, 0.1209] 0.144 [0.125, 0.161]       1.26      1.45
+              recent_activity         |90d     0.0432 0.1073 [0.0932, 0.1210] 0.138 [0.120, 0.154]       0.97      0.65
+                 hour_of_week        |365d     0.0436 0.1103 [0.0954, 0.1245] 0.123 [0.105, 0.141]       0.19     -1.41
+hour_of_week_smooth *post-hoc   k=6400|90d     0.0433 0.1073 [0.0932, 0.1210] 0.143 [0.124, 0.165]       1.25      1.43
+                  logreg[own]  C=0.003|90d     0.0431 0.1038 [0.0908, 0.1163] 0.153 [0.135, 0.168]       0.75     -0.31
+            logreg[own]+platt C=0.003|180d     0.0432 0.1035 [0.0906, 0.1158] 0.148 [0.129, 0.166]       0.88     -0.09
+              logreg[own+nbr] C=0.001|180d     0.0422 0.1015 [0.0888, 0.1137] 0.205 [0.181, 0.234]       0.82     -0.11
+        logreg[own+nbr]+platt C=0.001|180d     0.0423 0.1011 [0.0885, 0.1130] 0.203 [0.179, 0.233]       0.86     -0.19
+          logreg[own+nbr+cty] C=0.001|180d     0.0423 0.1015 [0.0888, 0.1136] 0.206 [0.182, 0.235]       0.82     -0.11
+    logreg[own+nbr+cty]+platt C=0.001|180d     0.0423 0.1011 [0.0885, 0.1131] 0.204 [0.181, 0.233]       0.85     -0.21
+       recent_level *post-hoc         |14d     0.0433 0.1040 [0.0914, 0.1164] 0.143 [0.123, 0.162]       0.63     -0.64
+
+Paired difference to recent_activity (bar B) (bar A); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc    0.0149 [0.0063, 0.0242]         0.999
+              logreg[own]  brier -0.0035 [-0.0048, -0.0024]         1.000
+        logreg[own]+platt pr_auc    0.0102 [0.0010, 0.0214]         0.985
+        logreg[own]+platt  brier -0.0038 [-0.0052, -0.0025]         1.000
+          logreg[own+nbr] pr_auc    0.0673 [0.0449, 0.0932]         1.000
+          logreg[own+nbr]  brier -0.0058 [-0.0080, -0.0038]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0654 [0.0429, 0.0915]         1.000
+    logreg[own+nbr]+platt  brier -0.0062 [-0.0086, -0.0040]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0679 [0.0463, 0.0932]         1.000
+      logreg[own+nbr+cty]  brier -0.0058 [-0.0080, -0.0038]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0663 [0.0452, 0.0911]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0062 [-0.0086, -0.0040]         1.000
+
+Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc   0.0094 [-0.0014, 0.0223]         0.957
+              logreg[own]  brier  -0.0002 [-0.0009, 0.0004]         0.759
+        logreg[own]+platt pr_auc   0.0048 [-0.0064, 0.0199]         0.761
+        logreg[own]+platt  brier -0.0005 [-0.0011, -0.0000]         0.975
+          logreg[own+nbr] pr_auc    0.0618 [0.0411, 0.0880]         1.000
+          logreg[own+nbr]  brier -0.0025 [-0.0041, -0.0008]         0.999
+    logreg[own+nbr]+platt pr_auc    0.0599 [0.0387, 0.0871]         1.000
+    logreg[own+nbr]+platt  brier -0.0029 [-0.0046, -0.0012]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0624 [0.0419, 0.0881]         1.000
+      logreg[own+nbr+cty]  brier -0.0025 [-0.0042, -0.0008]         0.999
+logreg[own+nbr+cty]+platt pr_auc    0.0608 [0.0401, 0.0869]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0028 [-0.0046, -0.0011]         1.000
+
+Paired difference to logreg[own]; Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+        logreg[own]+platt pr_auc  -0.0046 [-0.0104, 0.0011]         0.058
+        logreg[own]+platt  brier -0.0003 [-0.0006, -0.0000]         0.986
+          logreg[own+nbr] pr_auc    0.0524 [0.0313, 0.0778]         1.000
+          logreg[own+nbr]  brier -0.0022 [-0.0037, -0.0008]         0.999
+    logreg[own+nbr]+platt pr_auc    0.0505 [0.0284, 0.0762]         1.000
+    logreg[own+nbr]+platt  brier -0.0027 [-0.0043, -0.0010]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0530 [0.0326, 0.0781]         1.000
+      logreg[own+nbr+cty]  brier -0.0023 [-0.0038, -0.0008]         0.999
+logreg[own+nbr+cty]+platt pr_auc    0.0514 [0.0310, 0.0766]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0026 [-0.0043, -0.0010]         1.000
+
+Paired difference to logreg[own+nbr]; Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc -0.0524 [-0.0778, -0.0313]         0.000
+              logreg[own]  brier    0.0022 [0.0008, 0.0037]         0.001
+        logreg[own]+platt pr_auc -0.0571 [-0.0843, -0.0343]         0.000
+        logreg[own]+platt  brier    0.0019 [0.0004, 0.0034]         0.006
+    logreg[own+nbr]+platt pr_auc  -0.0019 [-0.0066, 0.0042]         0.275
+    logreg[own+nbr]+platt  brier  -0.0004 [-0.0009, 0.0001]         0.954
+      logreg[own+nbr+cty] pr_auc   0.0006 [-0.0019, 0.0034]         0.732
+      logreg[own+nbr+cty]  brier  -0.0000 [-0.0002, 0.0001]         0.684
+logreg[own+nbr+cty]+platt pr_auc  -0.0010 [-0.0068, 0.0057]         0.435
+logreg[own+nbr+cty]+platt  brier  -0.0004 [-0.0009, 0.0002]         0.899
+
+Calibration on test: logreg[own+nbr] (C=0.001|180d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.035     0.040
+1    947      0.054     0.081
+2    948      0.076     0.117
+3    947      0.105     0.136
+4    948      0.198     0.217
+
+Calibration on test: logreg[own+nbr]+platt (C=0.001|180d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.043     0.041
+1    947      0.066     0.079
+2    948      0.096     0.127
+3    947      0.124     0.136
+4    948      0.217     0.209
+
+Calibration on test: recent_activity (|90d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.048     0.109
+1    947      0.050     0.073
+2    948      0.056     0.104
+3    947      0.068     0.159
+4    948      0.082     0.147
+
+Standardised coefficients of logreg[own+nbr] (largest |coef|, trained before the last test block)
+nbr_active_kyiv            0.158
+own_starts_24h             0.142
+own_starts_7d              0.139
+nbr_active_cherkaska       0.105
+nbr_active_n               0.090
+nbr_log_since_start       -0.069
+nbr_starts_3h              0.063
+own_starts_3h              0.063
+own_active_frac_24h        0.048
+nbr_active_chernihivska    0.043
+
+===== H = 0.5 h   [84s] =====
+test rows 4737, days 57, positive rate 22.6%; validation rows 4962, positive rate 8.8%
+bar A (pre-specified baselines) = recent_activity | bar B (incl. post-hoc baselines) = recent_activity
+best baseline on the test block (oracle, strict) = recent_level
+                       family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
+                     constant         |90d     0.0799 0.1853 [0.1628, 0.2076] 0.275 [0.240, 0.308]       1.41      1.64
+              recent_activity         |90d     0.0796 0.1848 [0.1625, 0.2070] 0.258 [0.227, 0.286]       0.70      0.16
+                 hour_of_week        |365d     0.0812 0.1960 [0.1708, 0.2207] 0.238 [0.205, 0.270]       0.25     -0.62
+hour_of_week_smooth *post-hoc   k=6400|90d     0.0799 0.1853 [0.1628, 0.2076] 0.275 [0.239, 0.313]       1.40      1.63
+                  logreg[own]  C=0.003|90d     0.0794 0.1720 [0.1536, 0.1906] 0.289 [0.259, 0.313]       0.77     -0.11
+            logreg[own]+platt  C=0.01|180d     0.0795 0.1716 [0.1534, 0.1899] 0.283 [0.249, 0.311]       0.91      0.07
+              logreg[own+nbr] C=0.001|180d     0.0780 0.1659 [0.1472, 0.1836] 0.358 [0.320, 0.398]       0.83      0.01
+        logreg[own+nbr]+platt    C=0.1|90d     0.0781 0.1673 [0.1491, 0.1849] 0.335 [0.300, 0.371]       0.87     -0.06
+          logreg[own+nbr+cty] C=0.001|180d     0.0781 0.1658 [0.1472, 0.1835] 0.359 [0.321, 0.397]       0.84      0.01
+    logreg[own+nbr+cty]+platt   C=0.1|180d     0.0781 0.1656 [0.1473, 0.1829] 0.348 [0.315, 0.383]       0.86     -0.13
+       recent_level *post-hoc         |14d     0.0800 0.1733 [0.1544, 0.1921] 0.271 [0.236, 0.305]       0.66     -0.30
+
+Paired difference to recent_activity (bar B) (bar A); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc    0.0304 [0.0156, 0.0445]         1.000
+              logreg[own]  brier -0.0128 [-0.0172, -0.0085]         1.000
+        logreg[own]+platt pr_auc    0.0242 [0.0074, 0.0387]         0.999
+        logreg[own]+platt  brier -0.0133 [-0.0179, -0.0088]         1.000
+          logreg[own+nbr] pr_auc    0.0998 [0.0698, 0.1325]         1.000
+          logreg[own+nbr]  brier -0.0190 [-0.0252, -0.0131]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0762 [0.0487, 0.1100]         1.000
+    logreg[own+nbr]+platt  brier -0.0176 [-0.0237, -0.0120]         1.000
+      logreg[own+nbr+cty] pr_auc    0.1003 [0.0709, 0.1340]         1.000
+      logreg[own+nbr+cty]  brier -0.0191 [-0.0254, -0.0132]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0900 [0.0618, 0.1239]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0192 [-0.0258, -0.0131]         1.000
+
+Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc   0.0182 [-0.0020, 0.0349]         0.955
+              logreg[own]  brier  -0.0012 [-0.0034, 0.0007]         0.869
+        logreg[own]+platt pr_auc   0.0121 [-0.0100, 0.0304]         0.823
+        logreg[own]+platt  brier -0.0017 [-0.0036, -0.0000]         0.975
+          logreg[own+nbr] pr_auc    0.0876 [0.0576, 0.1193]         1.000
+          logreg[own+nbr]  brier -0.0074 [-0.0118, -0.0033]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0641 [0.0337, 0.0958]         1.000
+    logreg[own+nbr]+platt  brier -0.0060 [-0.0101, -0.0022]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0882 [0.0583, 0.1194]         1.000
+      logreg[own+nbr+cty]  brier -0.0075 [-0.0120, -0.0033]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0779 [0.0462, 0.1114]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0076 [-0.0122, -0.0035]         1.000
+
+Paired difference to logreg[own]; Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+        logreg[own]+platt pr_auc  -0.0062 [-0.0160, 0.0050]         0.144
+        logreg[own]+platt  brier  -0.0005 [-0.0012, 0.0002]         0.919
+          logreg[own+nbr] pr_auc    0.0694 [0.0430, 0.1011]         1.000
+          logreg[own+nbr]  brier -0.0062 [-0.0097, -0.0028]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0458 [0.0198, 0.0775]         1.000
+    logreg[own+nbr]+platt  brier -0.0048 [-0.0081, -0.0016]         0.998
+      logreg[own+nbr+cty] pr_auc    0.0700 [0.0453, 0.1008]         1.000
+      logreg[own+nbr+cty]  brier -0.0063 [-0.0099, -0.0028]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0596 [0.0343, 0.0917]         1.000
+logreg[own+nbr+cty]+platt  brier -0.0064 [-0.0099, -0.0031]         1.000
+
+Paired difference to logreg[own+nbr]; Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc -0.0694 [-0.1011, -0.0430]         0.000
+              logreg[own]  brier    0.0062 [0.0028, 0.0097]         0.000
+        logreg[own]+platt pr_auc -0.0756 [-0.1094, -0.0464]         0.000
+        logreg[own]+platt  brier    0.0057 [0.0021, 0.0092]         0.000
+    logreg[own+nbr]+platt pr_auc -0.0236 [-0.0384, -0.0088]         0.001
+    logreg[own+nbr]+platt  brier   0.0014 [-0.0003, 0.0033]         0.064
+      logreg[own+nbr+cty] pr_auc   0.0006 [-0.0030, 0.0042]         0.632
+      logreg[own+nbr+cty]  brier  -0.0001 [-0.0006, 0.0004]         0.660
+logreg[own+nbr+cty]+platt pr_auc  -0.0097 [-0.0213, 0.0018]         0.055
+logreg[own+nbr+cty]+platt  brier  -0.0002 [-0.0017, 0.0013]         0.607
+
+Calibration on test: logreg[own+nbr] (C=0.001|180d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.071     0.082
+1    947      0.114     0.166
+2    947      0.165     0.222
+3    947      0.222     0.265
+4    948      0.375     0.396
+
+Calibration on test: logreg[own+nbr]+platt (C=0.1|90d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.093     0.112
+1    947      0.144     0.156
+2    947      0.201     0.230
+3    947      0.250     0.277
+4    948      0.360     0.355
+
+Calibration on test: recent_activity (|90d), 5 quantile bins
+       n  mean_pred  observed
+bin                          
+0    948      0.090     0.198
+1    947      0.095     0.136
+2    947      0.109     0.271
+3    947      0.138     0.281
+4    948      0.174     0.244
+
+Standardised coefficients of logreg[own+nbr] (largest |coef|, trained before the last test block)
+own_starts_24h          0.183
+own_starts_7d           0.181
+nbr_active_kyiv         0.155
+nbr_active_cherkaska    0.134
+nbr_active_n            0.097
+nbr_log_since_start    -0.065
+own_starts_3h           0.063
+nbr_starts_3h           0.055
+own_active_frac_24h     0.048
+own_log_since_end      -0.045
