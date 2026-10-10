@@ -371,3 +371,6 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   never edited; on Monday they may additionally be recomputed with the gap filled, reported separately.
 - What is reported: every forecast with its answers, and per H the Brier score of model and baseline and how often each was closer to the answer.
   Stated in advance: with about 15-25 all-clears before the deadline this is an illustration, not evidence; no significance will be claimed.
+- Clarification written before the first forecast: a forecast counts only if it is written at most 3 minutes after the all-clear moment t
+  (otherwise an answer could already be in the log); later ones are written with counted = false and left out of the summary. The model training at
+  start takes minutes, so an all-clear during training would be late. Code: demo/live_forecast.py (tests: demo/test_live_forecast.py), committed before it ran.
