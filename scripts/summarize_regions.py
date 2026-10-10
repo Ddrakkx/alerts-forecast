@@ -90,7 +90,7 @@ def main() -> None:
            "PR-AUC: positive = better; Brier: negative = better. Models: logistic regression and boosting with all features.", ""]
     out += table("Against the baseline chosen on the validation block", "bar")
     out += table("Against the best baseline on the TEST block (strict: chosen with hindsight, favours the baselines)", "oracle")
-    (RESULTS / "summary.md").write_text(NL.join(out) + NL, encoding="utf-8")
+    (RESULTS / "summary.md").write_text(NL.join(out) + NL, encoding="utf-8", newline=NL)  # LF on every system
     print(NL.join(out))
 
 
