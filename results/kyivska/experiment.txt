@@ -1,9 +1,10 @@
 region Kyivska oblast | neighbours 6 | data end 2026-10-09 05:12 UTC | validation 2026-06-19..2026-08-14 | test 2026-08-14..2026-10-09
 
-===== H = 3 h (main)  [102s] =====
+===== H = 3 h (main)  [112s] =====
 test rows 4727, days 57, positive rate 73.9%; validation rows 4962, positive rate 39.0%
 bar A (pre-specified baselines) = recent_activity | bar B (incl. post-hoc baselines) = recent_activity
-best baseline on the test block (oracle, strict) = recent_level
+best baseline on the test block by Brier (oracle) = recent_level
+best baseline on the test block by PR-AUC (oracle) = hour_of_week_smooth
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
                      constant         |90d     0.2367 0.2577 [0.2473, 0.2697] 0.825 [0.773, 0.867]       2.76      1.48
               recent_activity         |90d     0.2362 0.2243 [0.2118, 0.2372] 0.830 [0.780, 0.872]       1.47      1.00
@@ -32,7 +33,7 @@ Paired difference to recent_activity (bar B) (bar A); Brier < 0 and PR-AUC > 0 m
 logreg[own+nbr+cty]+platt pr_auc    0.0321 [0.0064, 0.0588]         0.993
 logreg[own+nbr+cty]+platt  brier -0.0546 [-0.0703, -0.0398]         1.000
 
-Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and PR-AUC > 0 mean better
+Paired difference to recent_level (oracle by Brier); Brier < 0 and PR-AUC > 0 mean better
                     model metric                 difference  share_better
               logreg[own] pr_auc    0.0424 [0.0080, 0.0684]         0.989
               logreg[own]  brier   0.0006 [-0.0109, 0.0111]         0.454
@@ -46,6 +47,21 @@ Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and
       logreg[own+nbr+cty]  brier  -0.0047 [-0.0169, 0.0075]         0.794
 logreg[own+nbr+cty]+platt pr_auc    0.0547 [0.0199, 0.0819]         0.997
 logreg[own+nbr+cty]+platt  brier -0.0105 [-0.0220, -0.0004]         0.981
+
+Paired difference to hour_of_week_smooth (oracle by PR-AUC); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc   0.0186 [-0.0122, 0.0478]         0.864
+              logreg[own]  brier -0.0772 [-0.0997, -0.0551]         1.000
+        logreg[own]+platt pr_auc   0.0135 [-0.0156, 0.0372]         0.809
+        logreg[own]+platt  brier -0.0686 [-0.0891, -0.0488]         1.000
+          logreg[own+nbr] pr_auc    0.0318 [0.0030, 0.0624]         0.985
+          logreg[own+nbr]  brier -0.0827 [-0.1052, -0.0604]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0317 [0.0034, 0.0603]         0.992
+    logreg[own+nbr]+platt  brier -0.0876 [-0.1102, -0.0655]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0325 [0.0033, 0.0644]         0.980
+      logreg[own+nbr+cty]  brier -0.0824 [-0.1049, -0.0603]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0309 [0.0028, 0.0599]         0.987
+logreg[own+nbr+cty]+platt  brier -0.0883 [-0.1114, -0.0658]         1.000
 
 Paired difference to logreg[own]; Brier < 0 and PR-AUC > 0 mean better
                     model metric                 difference  share_better
@@ -112,10 +128,11 @@ own_log_since_end         -0.073
 own_active_frac_24h        0.067
 nbr_starts_1h              0.045
 
-===== H = 1 h   [99s] =====
+===== H = 1 h   [124s] =====
 test rows 4735, days 57, positive rate 40.1%; validation rows 4962, positive rate 16.2%
 bar A (pre-specified baselines) = recent_activity | bar B (incl. post-hoc baselines) = recent_activity
-best baseline on the test block (oracle, strict) = recent_level
+best baseline on the test block by Brier (oracle) = recent_level
+best baseline on the test block by PR-AUC (oracle) = hour_of_week_smooth
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
                      constant         |90d     0.1354 0.2708 [0.2425, 0.2989] 0.478 [0.423, 0.529]       1.62      1.74
               recent_activity         |90d     0.1349 0.2639 [0.2380, 0.2895] 0.476 [0.422, 0.522]       0.87      0.67
@@ -144,7 +161,7 @@ Paired difference to recent_activity (bar B) (bar A); Brier < 0 and PR-AUC > 0 m
 logreg[own+nbr+cty]+platt pr_auc    0.0857 [0.0456, 0.1288]         1.000
 logreg[own+nbr+cty]+platt  brier -0.0459 [-0.0606, -0.0323]         1.000
 
-Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and PR-AUC > 0 mean better
+Paired difference to recent_level (oracle by Brier); Brier < 0 and PR-AUC > 0 mean better
                     model metric                 difference  share_better
               logreg[own] pr_auc    0.0376 [0.0045, 0.0659]         0.985
               logreg[own]  brier  -0.0018 [-0.0072, 0.0031]         0.742
@@ -158,6 +175,21 @@ Paired difference to recent_level (oracle: best baseline on TEST); Brier < 0 and
       logreg[own+nbr+cty]  brier -0.0168 [-0.0270, -0.0082]         1.000
 logreg[own+nbr+cty]+platt pr_auc    0.0912 [0.0480, 0.1339]         1.000
 logreg[own+nbr+cty]+platt  brier -0.0171 [-0.0268, -0.0085]         1.000
+
+Paired difference to hour_of_week_smooth (oracle by PR-AUC); Brier < 0 and PR-AUC > 0 mean better
+                    model metric                 difference  share_better
+              logreg[own] pr_auc   0.0271 [-0.0099, 0.0541]         0.921
+              logreg[own]  brier -0.0375 [-0.0503, -0.0251]         1.000
+        logreg[own]+platt pr_auc   0.0151 [-0.0259, 0.0475]         0.738
+        logreg[own]+platt  brier -0.0396 [-0.0535, -0.0263]         1.000
+          logreg[own+nbr] pr_auc    0.0823 [0.0419, 0.1229]         1.000
+          logreg[own+nbr]  brier -0.0483 [-0.0624, -0.0350]         1.000
+    logreg[own+nbr]+platt pr_auc    0.0836 [0.0354, 0.1321]         1.000
+    logreg[own+nbr]+platt  brier -0.0530 [-0.0707, -0.0372]         1.000
+      logreg[own+nbr+cty] pr_auc    0.0911 [0.0427, 0.1383]         1.000
+      logreg[own+nbr+cty]  brier -0.0525 [-0.0695, -0.0377]         1.000
+logreg[own+nbr+cty]+platt pr_auc    0.0807 [0.0316, 0.1287]         0.999
+logreg[own+nbr+cty]+platt  brier -0.0529 [-0.0701, -0.0367]         1.000
 
 Paired difference to logreg[own]; Brier < 0 and PR-AUC > 0 mean better
                     model metric                 difference  share_better
@@ -224,10 +256,11 @@ own_starts_3h           0.070
 nbr_starts_1h           0.060
 nbr_log_since_start    -0.037
 
-===== H = 6 h   [95s] =====
+===== H = 6 h   [115s] =====
 test rows 4715, days 57, positive rate 88.2%; validation rows 4962, positive rate 60.0%
 bar A (pre-specified baselines) = recent_activity | bar B (incl. post-hoc baselines) = recent_level
-best baseline on the test block (oracle, strict) = recent_level
+best baseline on the test block by Brier (oracle) = recent_level
+best baseline on the test block by PR-AUC (oracle) = recent_level
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
                      constant         |90d     0.2393 0.1454 [0.1287, 0.1642] 0.948 [0.912, 0.972]       6.92     -2.25
               recent_activity         |90d     0.2393 0.1282 [0.1071, 0.1507] 0.950 [0.914, 0.973]       2.48      0.13
@@ -241,7 +274,7 @@ hour_of_week_smooth *post-hoc   k=6400|90d     0.2393 0.1455 [0.1287, 0.1642] 0.
     logreg[own+nbr+cty]+platt   C=0.1|365d     0.2398 0.0934 [0.0655, 0.1233] 0.965 [0.936, 0.984]       1.23      0.11
        recent_level *post-hoc         |14d     0.2352 0.0965 [0.0679, 0.1301] 0.951 [0.915, 0.978]       0.92      0.38
 
-Paired difference to recent_level (bar B) (oracle: best baseline on TEST); Brier < 0 and PR-AUC > 0 mean better
+Paired difference to recent_level (bar B) (oracle by Brier) (oracle by PR-AUC); Brier < 0 and PR-AUC > 0 mean better
                     model metric                difference  share_better
               logreg[own] pr_auc  0.0109 [-0.0023, 0.0247]         0.936
               logreg[own]  brier  0.0029 [-0.0078, 0.0118]         0.259

@@ -1,9 +1,10 @@
 region Kyivska oblast | neighbours 6
 
-===== H = 0.25 h | test rows 4738, positive rate 11.8% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr], best baseline on test = recent_level =====
+===== H = 0.25 h | test rows 4738, positive rate 11.8% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr], best baseline on test by Brier = recent_level, by PR-AUC = constant =====
            model               chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
  recent_activity                 |90d     0.0432 0.1073 [0.0932, 0.1210] 0.138 [0.120, 0.154]       0.97
     recent_level                 |14d     0.0433 0.1040 [0.0914, 0.1164] 0.143 [0.123, 0.162]       0.63
+        constant                 |90d     0.0433 0.1073 [0.0932, 0.1209] 0.144 [0.125, 0.161]       1.26
  logreg[own+nbr]         C=0.001|180d     0.0422 0.1015 [0.0888, 0.1137] 0.205 [0.181, 0.234]       0.82
         hgb[own] depth=3,iter=50|365d     0.0431 0.1042 [0.0912, 0.1168] 0.146 [0.128, 0.169]       0.63
 hgb[own+nbr+cty] depth=3,iter=50|365d     0.0422 0.1016 [0.0886, 0.1139] 0.207 [0.183, 0.235]       0.85
@@ -28,6 +29,13 @@ Paired difference to recent_level; Brier < 0 and PR-AUC > 0 mean better
         hgb[own]  brier   0.0002 [-0.0005, 0.0008]         0.271
 hgb[own+nbr+cty] pr_auc    0.0639 [0.0434, 0.0881]         1.000
 hgb[own+nbr+cty]  brier -0.0023 [-0.0037, -0.0009]         1.000
+
+Paired difference to constant; Brier < 0 and PR-AUC > 0 mean better
+           model metric                 difference  share_better
+        hgb[own] pr_auc   0.0024 [-0.0079, 0.0187]         0.708
+        hgb[own]  brier -0.0031 [-0.0043, -0.0020]         1.000
+hgb[own+nbr+cty] pr_auc    0.0636 [0.0409, 0.0892]         1.000
+hgb[own+nbr+cty]  brier -0.0057 [-0.0074, -0.0039]         1.000
 
 POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
                        vs metric                 difference  share_better
@@ -56,13 +64,14 @@ logreg[own+nbr+cty]+platt pr_auc   0.0031 [-0.0097, 0.0163]         0.695
           recent_activity pr_auc    0.0694 [0.0476, 0.0939]         1.000
              recent_level pr_auc    0.0639 [0.0434, 0.0881]         1.000
 
-===== H = 0.5 h | test rows 4737, positive rate 22.6% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr], best baseline on test = recent_level =====
-           model               chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
- recent_activity                 |90d     0.0796 0.1848 [0.1625, 0.2070] 0.258 [0.227, 0.286]       0.70
-    recent_level                 |14d     0.0800 0.1733 [0.1544, 0.1921] 0.271 [0.236, 0.305]       0.66
- logreg[own+nbr]         C=0.001|180d     0.0780 0.1659 [0.1472, 0.1836] 0.358 [0.320, 0.398]       0.83
-        hgb[own] depth=3,iter=50|365d     0.0795 0.1743 [0.1548, 0.1938] 0.279 [0.246, 0.314]       0.66
-hgb[own+nbr+cty] depth=3,iter=50|365d     0.0782 0.1672 [0.1483, 0.1855] 0.358 [0.319, 0.397]       0.91
+===== H = 0.5 h | test rows 4737, positive rate 22.6% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr], best baseline on test by Brier = recent_level, by PR-AUC = hour_of_week_smooth =====
+              model               chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
+    recent_activity                 |90d     0.0796 0.1848 [0.1625, 0.2070] 0.258 [0.227, 0.286]       0.70
+       recent_level                 |14d     0.0800 0.1733 [0.1544, 0.1921] 0.271 [0.236, 0.305]       0.66
+hour_of_week_smooth           k=6400|90d     0.0799 0.1853 [0.1628, 0.2076] 0.275 [0.239, 0.313]       1.40
+    logreg[own+nbr]         C=0.001|180d     0.0780 0.1659 [0.1472, 0.1836] 0.358 [0.320, 0.398]       0.83
+           hgb[own] depth=3,iter=50|365d     0.0795 0.1743 [0.1548, 0.1938] 0.279 [0.246, 0.314]       0.66
+   hgb[own+nbr+cty] depth=3,iter=50|365d     0.0782 0.1672 [0.1483, 0.1855] 0.358 [0.319, 0.397]       0.91
 
 Paired difference to logreg[own+nbr]; Brier < 0 and PR-AUC > 0 mean better
            model metric                 difference  share_better
@@ -84,6 +93,13 @@ Paired difference to recent_level; Brier < 0 and PR-AUC > 0 mean better
         hgb[own]  brier   0.0010 [-0.0011, 0.0031]         0.167
 hgb[own+nbr+cty] pr_auc    0.0871 [0.0573, 0.1158]         1.000
 hgb[own+nbr+cty]  brier -0.0060 [-0.0091, -0.0026]         1.000
+
+Paired difference to hour_of_week_smooth; Brier < 0 and PR-AUC > 0 mean better
+           model metric                 difference  share_better
+        hgb[own] pr_auc   0.0035 [-0.0182, 0.0250]         0.648
+        hgb[own]  brier -0.0111 [-0.0151, -0.0073]         1.000
+hgb[own+nbr+cty] pr_auc    0.0824 [0.0487, 0.1136]         1.000
+hgb[own+nbr+cty]  brier -0.0181 [-0.0234, -0.0130]         1.000
 
 POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
                        vs metric                 difference  share_better

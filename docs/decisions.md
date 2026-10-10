@@ -213,3 +213,17 @@ Template for each entry:
   (every horizon, largest at 30 min - 1 h) and Kharkivska (15 and 30 min); in Poltavska only for boosting (30 min, 1 h), not for logistic
   regression; in Lvivska none, and at 15/30 min neighbours make the logistic Brier worse (+0.0048 [+0.0009, +0.0102] at 15 min).
   My advance expectation "strongest at 15 min" holds only partly: in Kyivska the gain peaks at 30 min - 1 h.
+
+### Final results of decision 8 (results/<oblast>/*_short.txt, results/summary.md; strict reference per metric)
+- Question 1, models vs the strict reference at 15/30 min: Poltavska no (logistic 15 min PR-AUC +0.008 [-0.006, +0.021], Brier -0.0000; 30 min +0.012 [-0.019, +0.037]);
+  Kyivska yes, both metrics (30 min: PR-AUC +0.084 [+0.049, +0.118], Brier -0.0075 [-0.0120, -0.0033]); Kharkivska yes, both metrics
+  (30 min: +0.053 [+0.018, +0.087], -0.0116 [-0.0162, -0.0070]); Lvivska small PR-AUC gains, and at 15 min the logistic Brier is WORSE
+  (+0.0033 [+0.0002, +0.0074]).
+- Question 2, neighbours and country (same model with vs without): Kyivska yes at every horizon, Kharkivska yes at 15/30 min, Poltavska only for boosting at
+  30 min and 1 h, Lvivska no (logistic Brier worse with neighbours at 15/30 min). Neighbours alone give almost everything: "+nbr" and "+nbr+cty" differ by
+  at most 0.009 in PR-AUC for logistic regression.
+- The main horizon did not change; the main Poltava conclusion (no demonstrated gain over the strongest baseline) now holds at all five horizons.
+- After the per-metric strict reference, the Lviv H = 3 h PR-AUC gain is no longer significant (+0.068 [-0.006, +0.138]); README updated.
+- Mistakes in this step: the shell mangled a line break in a scripted edit once more (I switched to direct file edits for anything with backslashes);
+  one comparison of mine selected the wrong horizon range and one summary check compared tables of different sizes, both found before drawing conclusions;
+  one README sentence said "three times" for four changes.

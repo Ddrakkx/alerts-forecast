@@ -1,8 +1,9 @@
 region Poltavska oblast | neighbours 7
 
-===== H = 0.25 h | test rows 4485, positive rate 8.1% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr+cty], best baseline on test = recent_activity =====
+===== H = 0.25 h | test rows 4485, positive rate 8.1% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr+cty], best baseline on test by Brier = recent_activity, by PR-AUC = hour_of_week =====
               model               chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
     recent_activity                 |90d     0.0786 0.0746 [0.0671, 0.0829] 0.075 [0.066, 0.089]       1.44
+       hour_of_week                |365d     0.0797 0.0752 [0.0674, 0.0840] 0.089 [0.079, 0.101]       0.18
 logreg[own+nbr+cty]          C=0.001|90d     0.0785 0.0746 [0.0671, 0.0828] 0.096 [0.084, 0.112]       1.19
            hgb[own]  depth=2,iter=50|90d     0.0786 0.0749 [0.0673, 0.0832] 0.083 [0.073, 0.098]       0.13
    hgb[own+nbr+cty] depth=2,iter=50|365d     0.0786 0.0747 [0.0672, 0.0829] 0.096 [0.081, 0.115]       0.71
@@ -24,6 +25,13 @@ hgb[own+nbr+cty] pr_auc  0.0206 [0.0079, 0.0372]         0.999
 hgb[own+nbr+cty] pr_auc  0.0206 [0.0079, 0.0372]         0.999
 hgb[own+nbr+cty]  brier 0.0001 [-0.0004, 0.0005]         0.366
 hgb[own+nbr+cty]  brier 0.0001 [-0.0004, 0.0005]         0.366
+
+Paired difference to hour_of_week; Brier < 0 and PR-AUC > 0 mean better
+           model metric                difference  share_better
+        hgb[own] pr_auc -0.0054 [-0.0180, 0.0070]         0.197
+        hgb[own]  brier -0.0003 [-0.0009, 0.0002]         0.858
+hgb[own+nbr+cty] pr_auc  0.0073 [-0.0097, 0.0246]         0.791
+hgb[own+nbr+cty]  brier -0.0005 [-0.0012, 0.0001]         0.926
 
 POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
                        vs metric                difference  share_better
@@ -52,9 +60,10 @@ logreg[own+nbr+cty]+platt pr_auc  0.0061 [-0.0022, 0.0160]         0.927
           recent_activity pr_auc   0.0206 [0.0079, 0.0372]         0.999
              recent_level pr_auc  0.0109 [-0.0029, 0.0248]         0.947
 
-===== H = 0.5 h | test rows 4484, positive rate 16.0% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr]+platt, best baseline on test = recent_activity =====
+===== H = 0.5 h | test rows 4484, positive rate 16.0% | bar B = recent_activity, best logistic (by validation) = logreg[own+nbr]+platt, best baseline on test by Brier = recent_activity, by PR-AUC = hour_of_week =====
                 model                chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
       recent_activity                  |90d     0.1389 0.1345 [0.1223, 0.1476] 0.153 [0.134, 0.180]       0.73
+         hour_of_week                 |365d     0.1428 0.1362 [0.1228, 0.1508] 0.174 [0.153, 0.199]       0.16
 logreg[own+nbr]+platt           C=0.01|365d     0.1385 0.1349 [0.1229, 0.1476] 0.164 [0.143, 0.192]       0.15
              hgb[own]   depth=2,iter=50|90d     0.1389 0.1351 [0.1230, 0.1479] 0.160 [0.138, 0.187]      -0.10
      hgb[own+nbr+cty] depth=2,iter=150|180d     0.1387 0.1338 [0.1219, 0.1466] 0.195 [0.166, 0.231]       0.75
@@ -76,6 +85,13 @@ hgb[own+nbr+cty] pr_auc   0.0421 [0.0169, 0.0708]         1.000
 hgb[own+nbr+cty] pr_auc   0.0421 [0.0169, 0.0708]         1.000
 hgb[own+nbr+cty]  brier -0.0007 [-0.0022, 0.0008]         0.819
 hgb[own+nbr+cty]  brier -0.0007 [-0.0022, 0.0008]         0.819
+
+Paired difference to hour_of_week; Brier < 0 and PR-AUC > 0 mean better
+           model metric                difference  share_better
+        hgb[own] pr_auc -0.0141 [-0.0395, 0.0095]         0.114
+        hgb[own]  brier -0.0011 [-0.0031, 0.0008]         0.872
+hgb[own+nbr+cty] pr_auc  0.0215 [-0.0105, 0.0538]         0.896
+hgb[own+nbr+cty]  brier -0.0024 [-0.0050, 0.0000]         0.972
 
 POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
                        vs metric                difference  share_better
