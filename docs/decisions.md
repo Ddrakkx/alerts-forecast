@@ -351,3 +351,23 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   has passed (tested); the logger was restarted with the fix.
 - Planned after the holdout: aggregate the logged raion events to oblasts (an oblast is "under alert" if any raion is, and separately red only)
   and match them with the new volunteer snapshot for the logged period: which volunteer starts coincide with red and which with yellow raion starts.
+
+## 13. Live forecasts at each all-clear in Poltava oblast (pre-registered 2026-10-10, before the first forecast)
+- Trigger: the eMap log (decision 12) shows that the last enabled entry of Poltava oblast (any raion, or the oblast itself) went off.
+  The forecast moment t is the logger's poll time at which this was seen (that is when it is known). The forecaster reads only the local log,
+  so it sends no extra requests to the server. Only all-clears seen after the forecaster starts count; nothing is back-filled.
+- Model and baseline: for each H in {15 min, 30 min, 1 h, 3 h}, configurations chosen on the 8 weeks before the end of our snapshot
+  (2026-10-09 05:12:41 UTC, purged by H), exactly as the holdout runner does; the protocol model (logistic family with the best validation Brier)
+  and the no-hindsight baseline (bar B). Both are trained once on the volunteer snapshot (training rows t <= snapshot end - H) and not updated live.
+- Features at t: the same feature code (src/, frozen) on a history made of the volunteer snapshot up to its end plus eMap raion alerts merged into
+  oblast episodes (an oblast is under alert while any of its raions or the oblast itself is, any level). An alert still running at t counts as
+  running with an unknown end. Known problems, stated in advance: (1) training on volunteer data, live features from the official feed;
+  (2) no data between 2026-10-09 05:12 and the logger start 2026-10-10 12:25 UTC, so counts over 24 h are incomplete until 2026-10-11 12:25
+  and over 7 days until 2026-10-17 12:25; every forecast records this status.
+- Answers: primary = the volunteer dataset (the model's own target): did a Poltava alert start in (t, t+H]; checked when a newer snapshot exists
+  (not before the Monday holdout run). Secondary, available at once: eMap "any" (a Poltava raion or the oblast went on in (t, t+H]) and eMap "red"
+  (the same, with level red at the start).
+- Each forecast is written to demo/live/forecasts.jsonl with t and the wall-clock time it was made, before its answer can be known. Live forecasts are
+  never edited; on Monday they may additionally be recomputed with the gap filled, reported separately.
+- What is reported: every forecast with its answers, and per H the Brier score of model and baseline and how often each was closer to the answer.
+  Stated in advance: with about 15-25 all-clears before the deadline this is an illustration, not evidence; no significance will be claimed.
