@@ -11,7 +11,8 @@ from pathlib import Path
 RESULTS = Path(__file__).resolve().parents[1] / "results"
 NL = chr(10)
 REGIONS = [("poltavska", "Poltavska"), ("kyivska", "Kyivska"), ("kharkivska", "Kharkivska"), ("lvivska", "Lvivska")]
-MODEL = "logreg[own+nbr+cty]"
+MODEL = "logreg[own+nbr+cty]"  # used only in the neighbour table (same model with vs without the features)
+STRICT_BRIER, STRICT_PR = "STRICT_BRIER", "STRICT_PR"
 BOOST = "hgb[own+nbr+cty]"
 MAIN_H = (1, 3, 6)
 SHORT_H = (0.25, 0.5)  # additional (decision 8)
@@ -78,17 +79,23 @@ def posthoc(lines, vs: str) -> dict:
     return res
 
 
-def strict_refs(lines) -> tuple:
-    """(best baseline on the test block by Brier, by PR-AUC) from an experiment section."""
+def protocol_model(lines) -> str:
+    """The logistic family the protocol chose on validation (lr_best) for this oblast and horizon."""
+    return re.search(r"protocol model \(best logistic family on validation\) = (\S+)", NL.join(lines))[1]
+
+
+def strict_labels(lines) -> tuple:
+    """(best baseline configuration on the test block by Brier, by PR-AUC)."""
     text = NL.join(lines)
-    return (re.search(r"by Brier \(oracle\) = (\S+)", text)[1],
-            re.search(r"by PR-AUC \(oracle\) = (\S+)", text)[1])
+    return (re.search(r"strict reference by Brier \(best baseline configuration on the test block\) = (\S+)", text)[1],
+            re.search(r"strict reference by PR-AUC \(best baseline configuration on the test block\) = (\S+)", text)[1])
 
 
-def strict_model_diffs(lines, model: str = MODEL) -> dict:
-    """{'pr_auc': (d, lo, hi), 'brier': (d, lo, hi)} of `model` against the strict reference of each metric."""
-    ref_b, ref_p = strict_refs(lines)
-    return {"pr_auc": diffs(lines, ref_p, model).get("pr_auc"), "brier": diffs(lines, ref_b, model).get("brier")}
+def strict_model_diffs(lines) -> dict:
+    """{'model': name, 'pr_auc': (d, lo, hi), 'brier': (d, lo, hi)}: the protocol model against the strict reference of each metric."""
+    model = protocol_model(lines)
+    return {"model": model, "pr_auc": diffs(lines, STRICT_PR, model).get("pr_auc"),
+            "brier": diffs(lines, STRICT_BRIER, model).get("brier")}
 
 
 def fmt_diff(d, digits) -> str:
@@ -100,10 +107,11 @@ def fmt_diff(d, digits) -> str:
 
 
 def table(title: str, mode: str, horizons) -> list:
-    """mode 'bar': reference chosen on validation (bar B); mode 'oracle': best baseline on the test block."""
+    """mode 'bar': reference chosen on validation (bar B); mode 'strict': best baseline configuration on the test block, per metric."""
     out = [f"## {title}", "",
-           "| Region | H | positive in test / validation | reference | its Brier | its PR-AUC | logistic: dPR-AUC | logistic: dBrier | boosting: dPR-AUC | boosting: dBrier |",
-           "|---|---|---|---|---|---|---|---|---|---|"]
+           "| Region | H | positive in test / validation | protocol logistic | reference (Brier / PR-AUC) | its Brier | its PR-AUC "
+           "| logistic: dPR-AUC | logistic: dBrier | protocol boosting | boosting: dPR-AUC | boosting: dBrier |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for slug, name in REGIONS:
         exp, bst = load(slug, "experiment"), load(slug, "boosting")
         for h in horizons:
@@ -112,24 +120,27 @@ def table(title: str, mode: str, horizons) -> list:
             lines = exp[h]
             text = NL.join(lines)
             pos = re.search(r"positive rate ([\d.]+)%; validation rows \d+, positive rate ([\d.]+)%", text)
+            model = protocol_model(lines)
             if mode == "bar":  # one reference for both metrics
                 ref_b = ref_p = re.search(r"bar B \(incl\. post-hoc baselines\) = (\S+)", text)[1]
-            else:  # the strict reference is chosen separately for each metric
-                ref_b, ref_p = strict_refs(lines)
+                label = ref_b
+            else:  # the strict reference is the best baseline configuration on the test block, per metric
+                ref_b, ref_p = STRICT_BRIER, STRICT_PR
+                lb, lp = strict_labels(lines)
+                label = lb if lb == lp else f"{lb} / {lp}"
             rows = {m["fam"]: m for m in map(ROW.match, lines) if m}
-            lg_p, lg_b = diffs(lines, ref_p, MODEL), diffs(lines, ref_b, MODEL)
+            lg_p, lg_b = diffs(lines, ref_p, model), diffs(lines, ref_b, model)
             hg_p = hg_b = {}
+            boost = "n/a"
             if h in bst:
                 header = bst[h][0]
-                if mode == "bar":
-                    hb = hp = re.search(r"bar B = (\S+),", header)[1]
-                else:
-                    hb = re.search(r"by Brier = (\S+),", header)[1]
-                    hp = re.search(r"by PR-AUC = (\S+) =", header)[1]
-                hg_p, hg_b = diffs(bst[h], hp, BOOST), diffs(bst[h], hb, BOOST)
-            ref = ref_b if ref_b == ref_p else f"{ref_b} / {ref_p}"
-            out.append(f"| {name} | {hlabel(h)} | {pos[1]}% / {pos[2]}% | {ref} | {float(rows[ref_b]['brier']):.4f} | {float(rows[ref_p]['pr']):.3f} | "
-                       f"{fmt_diff(lg_p.get('pr_auc'), 3)} | {fmt_diff(lg_b.get('brier'), 4)} | "
+                boost = re.search(r"protocol boosting = (\S+),", header)[1]
+                hb = hp = re.search(r"bar B = (\S+),", header)[1] if mode == "bar" else None
+                if mode != "bar":
+                    hb, hp = STRICT_BRIER, STRICT_PR
+                hg_p, hg_b = diffs(bst[h], hp, boost), diffs(bst[h], hb, boost)
+            out.append(f"| {name} | {hlabel(h)} | {pos[1]}% / {pos[2]}% | {model} | {label} | {float(rows[ref_b]['brier']):.4f} | {float(rows[ref_p]['pr']):.3f} | "
+                       f"{fmt_diff(lg_p.get('pr_auc'), 3)} | {fmt_diff(lg_b.get('brier'), 4)} | {boost} | "
                        f"{fmt_diff(hg_p.get('pr_auc'), 3) if h in bst else 'n/a'} | {fmt_diff(hg_b.get('brier'), 4) if h in bst else 'n/a'} |")
     return out + [""]
 
@@ -155,14 +166,14 @@ def neighbours_table(horizons) -> list:
 
 def main() -> None:
     out = ["# Summary across oblasts (generated by scripts/summarize_regions.py, do not edit by hand)", "",
-           "Test = last 8 weeks. Differences are paired (same resampled days); † marks an interval that excludes zero. "
-           "PR-AUC: positive = better; Brier: negative = better. Models: logistic regression and boosting with all features. "
-           "Main horizon: 3 h. 15 and 30 min are additional (decision 8).", ""]
-    out += table("Main horizons, against the baseline chosen on the validation block", "bar", MAIN_H)
-    out += table("Main horizons, against the best baseline on the TEST block, separately for each metric "
-                 "(strict: chosen with hindsight, favours the baselines; reference shown as 'by Brier / by PR-AUC' when they differ)", "oracle", MAIN_H)
-    out += table("Additional short horizons, against the baseline chosen on the validation block", "bar", SHORT_H)
-    out += table("Additional short horizons, against the best baseline on the TEST block, separately for each metric (strict)", "oracle", SHORT_H)
+           "Test = last 8 weeks. Differences are paired, bootstrap over ISO weeks; † marks an interval that excludes zero "
+           "(judged on the rounded numbers). PR-AUC: positive = better; Brier: negative = better. Models: the logistic and the boosting "
+           "family that the protocol chose on validation (named in each row). Main horizon: 3 h. 15 and 30 min are additional (decision 8).", ""]
+    out += table("Main horizons, against the baseline chosen on the validation block (no hindsight)", "bar", MAIN_H)
+    out += table("Main horizons, against the best baseline CONFIGURATION on the test block, per metric "
+                 "(strict: chosen with hindsight among about 40 configurations, favours the baselines)", "strict", MAIN_H)
+    out += table("Additional short horizons, against the baseline chosen on the validation block (no hindsight)", "bar", SHORT_H)
+    out += table("Additional short horizons, against the best baseline configuration on the test block, per metric (strict)", "strict", SHORT_H)
     out += neighbours_table((*SHORT_H, 1, 3))
     (RESULTS / "summary.md").write_text(NL.join(out) + NL, encoding="utf-8", newline=NL)  # LF on every system
     print(NL.join(out))

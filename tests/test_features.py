@@ -102,12 +102,13 @@ def test_features_do_not_depend_on_the_future_in_other_regions_either():
 
 
 @pytest.mark.skipif(not REAL_FILE.exists(), reason="raw data not downloaded")
-def test_features_do_not_depend_on_the_future_real_data():
+@pytest.mark.parametrize("target", sorted(NEIGHBORS_BY_REGION))
+def test_features_do_not_depend_on_the_future_real_data(target):
     regions, data_end = load_regions(REAL_FILE)
-    assert "Luhanska oblast" not in regions and TARGET in regions
-    recent = regions[TARGET].loc[regions[TARGET]["started_at"] >= data_end - pd.Timedelta(days=60)]
-    times = probe_times(recent.reset_index(drop=True), n=80)
-    fn = lambda d, idx: build_features(d, TARGET, idx)  # noqa: E731
+    assert "Luhanska oblast" not in regions and target in regions
+    recent = regions[target].loc[regions[target]["started_at"] >= data_end - pd.Timedelta(days=60)]
+    times = probe_times(recent.reset_index(drop=True), n=60)
+    fn = lambda d, idx: build_features(d, target, idx)  # noqa: E731
     assert truncation_violations(fn, regions, times, truncate=truncate_regions) == []
 
 

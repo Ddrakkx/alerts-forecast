@@ -30,6 +30,19 @@ def calibration_slope_intercept(y, p, eps: float = 1e-4) -> tuple[float, float]:
     return float(m.coef_[0, 0]), float(m.intercept_[0])
 
 
+def with_blocks(result: pd.DataFrame, unit: str = "week") -> pd.DataFrame:
+    """Set the bootstrap block column ('day'): 'day' keeps Kyiv days, 'week' = ISO weeks of the Kyiv calendar
+    (the alert rate persists for weeks, so day blocks understate the uncertainty), '6h' = 6-hour blocks (short holdout)."""
+    local = result.index.tz_convert("Europe/Kyiv")
+    if unit == "day":
+        return result.assign(day=local.strftime("%Y-%m-%d"))
+    if unit == "week":
+        return result.assign(day=local.strftime("%G-%V"))
+    if unit == "6h":
+        return result.assign(day=[f"{d}-{h // 6}" for d, h in zip(local.strftime("%Y-%m-%d"), local.hour)])
+    raise ValueError(f"unknown block unit {unit!r}")
+
+
 def day_block_bootstrap(result: pd.DataFrame, models: list, reference, n_boot: int = 1000, seed: int = 0):
     """Resample whole days (rows of one day stay together) to respect dependence between neighbours.
 

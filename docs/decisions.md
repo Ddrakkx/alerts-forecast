@@ -248,4 +248,36 @@ The only block nobody has seen is the data that arrives after the current snapsh
   Stated in advance: with about 3 days most cells will probably be inconclusive.
 - A cell is "not evaluable" if the holdout has fewer than 10 positive or fewer than 10 negative moments for it.
 - Frozen code: the holdout runner and all fixes of decision 10 are committed and tagged `holdout-freeze` before the download.
-  After the download only data-free changes are forbidden to the analysis; if a bug blocks the run, the fix is a separate commit described as a deviation.
+  After the download the analysis code is not changed; if a bug blocks the run, the fix is a separate commit described as a deviation.
+  (Wording of this line corrected on 2026-10-10, before any new data; the first version was garbled, the meaning is unchanged.)
+
+## 10. External review: what was confirmed, and the fixes (2026-10-10)
+A second agent reviewed the repository. I re-computed its main claims with my own code before changing anything
+(scripts kept outside the repository, the numbers are below). Confirmed:
+- Validation was not purged before the test block: its last labels looked into the first H hours of the test block (9-11 rows at H=3),
+  and in 2 of 16 cells this changed a chosen configuration (one of them the main logistic model of Kharkivska at 1 h). FIXED: validation ends at test start - H.
+- The "strict reference" was the best baseline FAMILY on the test block, with the configuration inside the family chosen on validation, so the README sentence
+  "best baseline on the test block itself" was false. Against the best baseline CONFIGURATION on the test block (usually recent_level with W = 3 days)
+  Poltavska 3 h gives PR-AUC -0.042 [-0.079, -0.006]. FIXED: the strict reference is now the best of all baseline configurations on the test block, per metric.
+  My caveat: a maximum over about 40 configurations chosen on the test block is itself biased towards the baselines, so it is a bound, not the truth;
+  the no-hindsight reference (bar B, chosen on validation) is reported next to it.
+- The tables showed logreg[own+nbr+cty] without Platt, a variant I picked after seeing results, while the protocol picks the logistic family with the best
+  validation Brier (lr_best); they differ in 14 of 16 cells, and e.g. Poltavska 1 h becomes significantly worse in Brier (+0.0013 [+0.0001, +0.0028]).
+  FIXED: tables, figures and robustness use the protocol models (lr_best, hgb_best); the neighbour table keeps fixed families on purpose (same model with vs without features).
+- Day-block intervals were too narrow: the alert rate persists for weeks. With ISO-week blocks Kyivska 3 h and the Lvivska gains lose significance.
+  FIXED: week blocks for all reported intervals (only 9 blocks in 8 weeks, so the intervals are coarse).
+- The test block influenced more choices than the README admitted: the reported logistic variant, the choice of Lvivska (by its alert count in the test block),
+  and adding 15/30 min after seeing the saturation at 3 h. Now listed in the README.
+- Invented ends (naive) also enter neighbour and country features, which the sensitivity run did not cover. In the test block: Poltavska 21 of 382 alerts (5.5%;
+  1.9% is the whole-period share), Rivnenska 27 of 107, Ternopilska 9 of 21, Volynska 18 of 216: Lviv's neighbour features rest largely on invented ends. Limitation, not fixed.
+- Lvivska: 91% of volunteer alert starts (2026-05..08-28) are not inside any official episode of the oblast (Poltavska 0%, Kyivska 3%; my count, with +-15 min).
+  "Different splitting" cannot explain that; the Lviv series describes something the official data does not have. Lvivska stays with a warning (user's decision).
+- My README claims that were wrong: "Lviv is the quietest western oblast that can be evaluated" (it is the most active one: Lviv 245, Volyn 216, Rivne 107,
+  Khmelnytskyi 75, Chernivtsi 36 alerts in the test block); "in the west alerts are declared over large areas at once" (in the test block a neighbour starts in the
+  2 minutes before Lviv's own start in 2% of cases, in 15 minutes in 11%; Poltava 17% and 64%; over the whole period both oblasts are near 35-60%, so the
+  claim also depends on the period); "the daily-refit baseline is the conservative direction for the claims" (true for claims of gains, not for the negative Poltava claim);
+  "real-data truncation test for more than one oblast" (it ran only for Poltava). FIXED in the README; the real-data truncation test now runs for all four oblasts.
+- Not verified by me: late additions to the dataset (needs old snapshots). It is tested on Monday: the holdout run compares the snapshots first (decision 9).
+- Not done on purpose: giving the models a 3-day rate feature or daily refits. It would be another change after seeing the test; listed as an extension.
+- The holdout runner (scripts/run_holdout.py) and the new-snapshot download (scripts/download_data.py --new-snapshot) were written and dry-run on already seen data
+  before any new data exists. One bug found in the dry run's code before freezing: the verdict text called a positive Brier difference "better"; fixed and tested.

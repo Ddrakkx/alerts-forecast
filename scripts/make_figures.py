@@ -1,7 +1,7 @@
 """Figures for the README, in a light and a dark version (docs/figures/*.png).
 
 1. Share of positive moments by month (main sample, H = 3 h) for the four oblasts, with the validation and test blocks marked.
-2. PR-AUC difference to the strict reference (best baseline on the test block), logistic regression, per oblast and horizon.
+2. PR-AUC difference of the protocol logistic model to the strict reference (best baseline configuration on the test block), per oblast and horizon.
 3. The same for the Brier score.
 Figures 2 and 3 are read from results/<oblast>/experiment*.txt through the summary parser, so they show exactly the numbers of the tables.
 
@@ -108,7 +108,7 @@ def fig_monthly(rates, val_start, test_start, data_end, mode):
 
 
 def strict_diffs() -> dict:
-    """{oblast label: {horizon: {'pr_auc': (d, lo, hi), 'brier': (d, lo, hi)}}} for logistic regression with all features."""
+    """{oblast label: {horizon: {'model': name, 'pr_auc': (d, lo, hi), 'brier': (d, lo, hi)}}} for the protocol logistic model."""
     out = {}
     for _, slug, label in OBLASTS:
         exp = S.load(slug, "experiment")
@@ -143,10 +143,10 @@ def fig_diffs(data, metric, mode):
         ax.set_yticklabels([name for _, name in HORIZONS])
         ax.tick_params(axis="x", labelsize=8.5)
     if metric == "pr_auc":
-        title = "PR-AUC: logistic regression minus the best baseline on the test block (95% interval)"
+        title = "PR-AUC: protocol logistic model minus the best baseline configuration on the test block (95% interval, week blocks)"
         hint = "model better  →"
     else:
-        title = "Brier score: logistic regression minus the best baseline on the test block (95% interval)"
+        title = "Brier score: protocol logistic model minus the best baseline configuration on the test block (95% interval, week blocks)"
         hint = "←  model better"
     fig.suptitle(title, x=0.01, ha="left", color=t["ink"], fontsize=11.5)
     fig.text(0.01, 0.015, "filled dot: interval excludes zero   ·   open dot: interval includes zero   ·   " + hint,

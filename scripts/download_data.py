@@ -3,19 +3,26 @@
 Existing files are never overwritten: if one is present its size is checked and the script
 stops with an error on a mismatch.
 
-    python scripts/download_data.py
+    python scripts/download_data.py                 # the pinned snapshot used for all results
+    python scripts/download_data.py --new-snapshot  # the newest volunteer file into data/holdout/ (holdout test, decision 9)
 """
+import hashlib
+import json
 import sys
 import urllib.request
 from pathlib import Path
 
 SHA = "2f115548a8bd0816c901dbf422082091b3e5c34c"
-URL = "https://raw.githubusercontent.com/Vadimkin/ukrainian-air-raid-sirens-dataset/{sha}/datasets/{name}"
+REPO = "Vadimkin/ukrainian-air-raid-sirens-dataset"
+URL = "https://raw.githubusercontent.com/" + REPO + "/{sha}/datasets/{name}"
+API_HEAD = "https://api.github.com/repos/" + REPO + "/commits/HEAD"
 FILES = {  # name -> expected size in bytes
     "volunteer_data_en.csv": 8876306,
     "official_data_en.csv": 31025633,
 }
-DEST = Path(__file__).resolve().parents[1] / "data" / "raw"
+ROOT = Path(__file__).resolve().parents[1]
+DEST = ROOT / "data" / "raw"
+HOLDOUT = ROOT / "data" / "holdout"
 
 
 def ensure(dest: Path = DEST, files: dict = FILES, sha: str = SHA, opener=urllib.request.urlopen) -> None:
@@ -38,5 +45,24 @@ def ensure(dest: Path = DEST, files: dict = FILES, sha: str = SHA, opener=urllib
         print(f"saved   {path}")
 
 
+def fetch_new_snapshot(dest: Path = HOLDOUT, opener=urllib.request.urlopen) -> str:
+    """Newest volunteer file at the current HEAD commit; its SHA, size and sha256 go to SNAPSHOT.txt. Never overwrites."""
+    path = dest / "volunteer_data_en.csv"
+    if path.exists():
+        raise SystemExit(f"{path} exists, not overwriting")
+    with opener(API_HEAD) as resp:
+        sha = json.load(resp)["sha"]
+    with opener(URL.format(sha=sha, name="volunteer_data_en.csv")) as resp:
+        data = resp.read()
+    dest.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    (dest / "SNAPSHOT.txt").write_text(
+        f"sha {sha}" + chr(10) + f"bytes {len(data)}" + chr(10) + f"sha256 {hashlib.sha256(data).hexdigest()}" + chr(10),
+        encoding="utf-8",
+    )
+    print(f"saved   {path} ({len(data)} bytes) at commit {sha}")
+    return sha
+
+
 if __name__ == "__main__":
-    sys.exit(ensure())
+    sys.exit(fetch_new_snapshot() and None if "--new-snapshot" in sys.argv else ensure())

@@ -181,3 +181,39 @@ def test_feature_grid_covers_every_horizon_and_missing_features_are_refused():
     old = pd.DataFrame({"f": 1.0}, index=feature_index(alerts, data_end, [1]))
     with pytest.raises(ValueError, match="without features"):
         join_features(main_sample(build_frame(alerts, data_end, 0.25)), old)
+
+
+def test_block_units_for_the_bootstrap():
+    from alerts_forecast.metrics import with_blocks
+
+    idx = pd.date_range("2026-03-01 20:00", periods=8, freq="3h", tz="UTC")  # Kyiv = UTC+2 before 2026-03-29
+    res = pd.DataFrame({"y": 0, "day": "x"}, index=idx)
+    assert with_blocks(res, "day")["day"].iloc[0] == "2026-03-01"  # 22:00 Kyiv
+    assert with_blocks(res, "day")["day"].iloc[1] == "2026-03-02"  # 01:00 Kyiv
+    weeks = with_blocks(res, "week")["day"]
+    assert weeks.iloc[0] == "2026-09" and weeks.iloc[1] == "2026-10"  # Sunday 22:00 vs Monday 01:00 (ISO weeks)
+    six = with_blocks(res, "6h")["day"].tolist()
+    assert six[:3] == ["2026-03-01-3", "2026-03-02-0", "2026-03-02-0"]  # 22:00, 01:00, 04:00 Kyiv
+
+
+def test_evaluate_purges_validation_and_picks_strict_configurations():
+    from alerts_forecast.baselines import constant_rate, hour_of_week_rate, recent_activity_rate
+    from alerts_forecast.experiment import STRICT_BRIER, STRICT_PR, evaluate
+    from alerts_forecast.metrics import brier, pr_auc
+    from alerts_forecast.models import make_logreg
+
+    rng = np.random.default_rng(0)
+    idx = pd.date_range("2026-01-01", periods=120 * 96, freq="15min", tz="UTC")
+    x = rng.normal(size=len(idx))
+    sample = pd.DataFrame({"y": rng.random(len(idx)) < 1 / (1 + np.exp(-x)), "x": x,
+                           "minutes_since_last_end": rng.uniform(0, 600, len(idx)), "prev_naive": False}, index=idx)
+    cfg = [("constant", "", "90d", constant_rate), ("recent_activity", "", "90d", recent_activity_rate),
+           ("hour_of_week", "", "90d", hour_of_week_rate), ("logreg[x]", "C=1", "90d", make_logreg(["x"], 1.0))]
+    h, test_start = 3, pd.Timestamp("2026-04-01", tz="UTC")
+    ev = evaluate(sample, h, test_start - pd.Timedelta(weeks=4), test_start, test_start + pd.Timedelta(weeks=2), cfg)
+    assert ev.val.index.max() + pd.Timedelta(hours=h) <= test_start  # validation labels stay out of the test block
+    assert ev.lr_best == "logreg[x]" and ev.hgb_best == ""
+    base = [c for c in ev.test.columns if "|" in c and not c.startswith("logreg")]
+    assert ev.oracle == min(base, key=lambda c: brier(ev.test["y"], ev.test[c]))
+    assert ev.oracle_pr == max(base, key=lambda c: pr_auc(ev.test["y"], ev.test[c]))
+    assert np.allclose(ev.res[STRICT_BRIER], ev.test[ev.oracle]) and np.allclose(ev.res[STRICT_PR], ev.test[ev.oracle_pr])

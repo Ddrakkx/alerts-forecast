@@ -46,3 +46,26 @@ def test_wrong_downloaded_size_is_rejected_and_nothing_saved(tmp_path):
     with pytest.raises(SystemExit, match="expected"):
         download_data.ensure(tmp_path, {"a.csv": 5}, sha="abc", opener=lambda url: FakeResponse(b"123"))
     assert not (tmp_path / "a.csv").exists()
+
+
+def test_holdout_verdict_direction_depends_on_the_metric():
+    import run_holdout
+
+    assert run_holdout.fmt((0.02, 0.01, 0.03), "pr_auc").endswith("better")
+    assert run_holdout.fmt((0.02, 0.01, 0.03), "brier").endswith("worse")
+    assert run_holdout.fmt((-0.02, -0.03, -0.01), "brier").endswith("better")
+    assert run_holdout.fmt((0.0, -0.01, 0.01), "pr_auc").endswith("inconclusive")
+
+
+def test_new_snapshot_records_sha_and_never_overwrites(tmp_path):
+    def opener(url):
+        if "api.github.com" in url:
+            return FakeResponse(b'{"sha": "abc123"}')
+        assert "/abc123/datasets/volunteer_data_en.csv" in url
+        return FakeResponse(b"region,started_at\n")
+
+    assert download_data.fetch_new_snapshot(tmp_path, opener=opener) == "abc123"
+    info = (tmp_path / "SNAPSHOT.txt").read_text()
+    assert "sha abc123" in info and "bytes 18" in info and "sha256 " in info
+    with pytest.raises(SystemExit, match="not overwriting"):
+        download_data.fetch_new_snapshot(tmp_path, opener=opener)

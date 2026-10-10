@@ -21,6 +21,7 @@ POSTHOC = "hour_of_week_smooth"
 RECENT_LEVEL = "recent_level"  # post hoc 2: constant rate of the last W days, refit every day
 RL_WINDOWS = {"3d": 3, "7d": 7, "14d": 14, "30d": 30}
 POSTHOC_FAMILIES = (POSTHOC, RECENT_LEVEL)
+STRICT_BRIER, STRICT_PR = "STRICT_BRIER", "STRICT_PR"  # columns of the strict references in Evaluation.res
 
 
 def feature_index(alerts, data_end, horizons) -> pd.DatetimeIndex:
@@ -92,15 +93,17 @@ class Evaluation:
     chosen: dict      # family -> configuration label chosen on validation
     bar_a: str        # best of the pre-specified baselines
     bar_b: str        # best including the post-hoc baselines (smoothed hour of week, recent level)
-    lr_best: str      # logistic family with the best validation Brier
-    oracle: str       # baseline family with the best Brier on the TEST block: a strict, optimistic-for-baselines reference
-    oracle_pr: str    # the same for PR-AUC (the best baseline differs by metric)
-    res: pd.DataFrame  # test: y, day, prev_naive and one column per family (chosen configuration)
+    lr_best: str      # logistic family with the best validation Brier: THE model of the protocol
+    hgb_best: str     # boosting family with the best validation Brier ("" when boosting was not run)
+    oracle: str       # baseline CONFIGURATION with the best Brier on the test block (strict; hindsight, favours baselines)
+    oracle_pr: str    # baseline configuration with the best PR-AUC on the test block
+    res: pd.DataFrame  # test: y, day, prev_naive, one column per family (chosen configuration), STRICT_BRIER, STRICT_PR
 
 
 def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Evaluation:
     all_configs = all_configs or configs()
-    val = run_configs(sample, h, val_start, test_start, all_configs)
+    # purge: validation labels must not look into the test block either (t + H <= test start)
+    val = run_configs(sample, h, val_start, test_start - pd.Timedelta(hours=h), all_configs)
     test = run_configs(sample, h, test_start, test_end, all_configs)
     val_brier = {c: brier(val["y"], val[c]) for c in val.columns if "|" in c}
     chosen = {}
@@ -109,14 +112,18 @@ def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Ev
         if fam not in chosen or b < val_brier[chosen[fam]]:
             chosen[fam] = c
     fam_b = lambda f: val_brier[chosen[f]]  # noqa: E731
-    bar_a = min(PRESET_BASELINES, key=fam_b)
-    bar_b = min((*PRESET_BASELINES, *POSTHOC_FAMILIES), key=fam_b)
+    bar_a = min((f for f in PRESET_BASELINES if f in chosen), key=fam_b)
+    bar_b = min((f for f in (*PRESET_BASELINES, *POSTHOC_FAMILIES) if f in chosen), key=fam_b)
     lr_best = min((f for f in chosen if f.startswith("logreg")), key=fam_b)  # hgb families are compared to it
     res = test[["y", "day"]].copy()
     res["prev_naive"] = sample.loc[res.index, "prev_naive"].to_numpy()
     for fam, c in chosen.items():
         res[fam] = test[c]
-    baselines = [f for f in chosen if f in (*PRESET_BASELINES, *POSTHOC_FAMILIES)]
-    oracle = min(baselines, key=lambda f: brier(res["y"], res[f]))
-    oracle_pr = max(baselines, key=lambda f: pr_auc(res["y"], res[f]))
-    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, oracle, oracle_pr, res)
+    hgbs = [f for f in chosen if f.startswith("hgb")]
+    hgb_best = min(hgbs, key=fam_b) if hgbs else ""
+    # strict reference: the best of ALL baseline configurations on the test block, separately per metric
+    base_cfgs = [c for c in test.columns if "|" in c and c.split("|")[0] in (*PRESET_BASELINES, *POSTHOC_FAMILIES)]
+    oracle = min(base_cfgs, key=lambda c: brier(test["y"], test[c]))
+    oracle_pr = max(base_cfgs, key=lambda c: pr_auc(test["y"], test[c]))
+    res[STRICT_BRIER], res[STRICT_PR] = test[oracle], test[oracle_pr]
+    return Evaluation(h, val, test, val_brier, chosen, bar_a, bar_b, lr_best, hgb_best, oracle, oracle_pr, res)
