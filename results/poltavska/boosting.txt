@@ -1,3 +1,4 @@
+region Poltavska oblast | neighbours 7
 
 ===== H = 1 h | test rows 4482, positive rate 30.0% | bar B = constant, best logistic (by validation) = logreg[own+nbr]+platt =====
                 model                chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope

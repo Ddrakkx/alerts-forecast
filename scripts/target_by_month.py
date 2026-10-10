@@ -2,6 +2,7 @@
 
     python scripts/target_by_month.py
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -10,12 +11,14 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from alerts_forecast.data import load_volunteer  # noqa: E402
+from alerts_forecast.data import REGION, load_volunteer  # noqa: E402
 from alerts_forecast.target import HORIZONS_H, build_frame, main_sample  # noqa: E402
 
 
 def main() -> None:
-    alerts, data_end = load_volunteer(ROOT / "data" / "raw" / "volunteer_data_en.csv")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--region", default=REGION)
+    alerts, data_end = load_volunteer(ROOT / "data" / "raw" / "volunteer_data_en.csv", ap.parse_args().region)
     month = lambda idx: idx.tz_convert("Europe/Kyiv").strftime("%Y-%m")  # noqa: E731
     table = pd.DataFrame(index=sorted(set(month(pd.DatetimeIndex(alerts["started_at"])))))
     table["alerts"] = pd.Series(1, index=pd.DatetimeIndex(alerts["started_at"])).groupby(month).sum()

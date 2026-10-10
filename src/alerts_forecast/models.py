@@ -7,10 +7,16 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
+def _single_class(y) -> bool:
+    return pd.Series(np.asarray(y)).nunique() < 2
+
+
 def make_logreg(columns: list, C: float):
     """Standardised logistic regression on the given columns. The scaler is fit on the training rows only."""
 
     def fit_predict(train: pd.DataFrame, test: pd.DataFrame, horizon_h: int) -> np.ndarray:
+        if _single_class(train["y"]):  # quiet region: no alert (or only alerts) in the window
+            return np.full(len(test), float(train["y"].mean()))
         pipe = make_pipeline(StandardScaler(), LogisticRegression(C=C, max_iter=2000))
         pipe.fit(train[columns], train["y"].astype(int))
         return pipe.predict_proba(test[columns])[:, 1]
@@ -31,6 +37,8 @@ def make_platt(base_fit_predict, cal_days: int = 28):
         cal_part = train.loc[train.index > cal_start]
         both = base_fit_predict(fit_part, pd.concat([cal_part, test]), horizon_h)
         p_cal, p_test = both[: len(cal_part)], both[len(cal_part):]
+        if _single_class(cal_part["y"]):  # nothing to learn the sigmoid from: keep the raw probabilities
+            return p_test
         eps = 1e-4
         logit = lambda p: np.log(np.clip(p, eps, 1 - eps) / (1 - np.clip(p, eps, 1 - eps))).reshape(-1, 1)  # noqa: E731
         sigmoid = LogisticRegression(C=1e6, max_iter=1000).fit(logit(p_cal), cal_part["y"].astype(int))
@@ -46,6 +54,8 @@ def make_hgb(columns: list, max_depth: int, n_iter: int):
     """
 
     def fit_predict(train: pd.DataFrame, test: pd.DataFrame, horizon_h: int) -> np.ndarray:
+        if _single_class(train["y"]):
+            return np.full(len(test), float(train["y"].mean()))
         model = HistGradientBoostingClassifier(
             max_depth=max_depth, max_iter=n_iter, learning_rate=0.05, min_samples_leaf=200,
             l2_regularization=1.0, early_stopping=False, random_state=0,

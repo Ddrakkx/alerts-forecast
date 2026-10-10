@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from alerts_forecast.data import REGION, load_official_regions, load_regions  # noqa: E402
 from alerts_forecast.experiment import configs, evaluate  # noqa: E402
-from alerts_forecast.features import build_features  # noqa: E402
+from alerts_forecast.features import build_features, neighbors_of  # noqa: E402
 from alerts_forecast.metrics import day_block_bootstrap  # noqa: E402
 from alerts_forecast.target import build_frame, main_sample  # noqa: E402
 
@@ -46,11 +46,12 @@ def summarize(label, res, models, ref, boot) -> None:
               f" | Brier {g(m, 'brier').value:.4f}  diff {fmt(b['diff'], b.lo, b.hi)}")
 
 
-def run_source(name, regions, data_end, h, boot, all_configs, test_weeks=8):
-    alerts = regions[REGION]
+def run_source(name, regions, data_end, h, boot, all_configs, region, test_weeks=8):
+    alerts = regions[region]
+    nbrs = neighbors_of(region)
     test_start = data_end.floor("D") - pd.Timedelta(weeks=test_weeks)
     val_start = test_start - pd.Timedelta(weeks=test_weeks)
-    feats = build_features(regions, REGION, build_frame(alerts, data_end, 1).index)
+    feats = build_features(regions, region, build_frame(alerts, data_end, 1).index, nbrs)
     sample = main_sample(build_frame(alerts, data_end, h)).join(feats)
     ev = evaluate(sample, h, val_start, test_start, data_end, all_configs)
     print(f"\n[{name}] H={h}: test {test_start:%Y-%m-%d}..{data_end:%Y-%m-%d}, bar B = {ev.bar_b} "
@@ -60,14 +61,16 @@ def run_source(name, regions, data_end, h, boot, all_configs, test_weeks=8):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--region", default=REGION)
     ap.add_argument("--boot", type=int, default=500)
     args = ap.parse_args()
-    all_configs = configs()
+    all_configs = configs(neighbors_of(args.region))
+    print(f"region {args.region}")
 
     regions, data_end = load_regions(ROOT / "data" / "raw" / "volunteer_data_en.csv")
     print("===== A. Evaluation subsets (volunteer, full period) =====")
     for h in HORIZONS:
-        ev, _ = run_source("volunteer", regions, data_end, h, args.boot, all_configs)
+        ev, _ = run_source("volunteer", regions, data_end, h, args.boot, all_configs, args.region)
         res, models = ev.res, [ev.bar_b, FAMILY, FAMILY_PLATT]
         summarize("all rows", res, models, ev.bar_b, args.boot)
         summarize("without naive-affected moments", res[~res["prev_naive"]], models, ev.bar_b, args.boot)
@@ -79,7 +82,7 @@ def main() -> None:
     official = load_official_regions(ROOT / "data" / "raw" / "official_data_en.csv")
     for h in HORIZONS:
         for name, regs in (("volunteer", regions), ("official", official)):
-            ev, _ = run_source(name, regs, end, h, args.boot, all_configs)
+            ev, _ = run_source(name, regs, end, h, args.boot, all_configs, args.region)
             summarize("all rows", ev.res, [ev.bar_b, FAMILY, FAMILY_PLATT], ev.bar_b, args.boot)
 
 

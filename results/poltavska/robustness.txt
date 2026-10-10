@@ -1,3 +1,4 @@
+region Poltavska oblast
 ===== A. Evaluation subsets (volunteer, full period) =====
 
 [volunteer] H=3: test 2026-08-14..2026-10-09, bar B = hour_of_week_smooth (k=1600|90d), logreg chosen = C=0.001|90d

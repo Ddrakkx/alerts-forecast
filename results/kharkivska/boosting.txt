@@ -1,0 +1,93 @@
+region Kharkivska oblast | neighbours 4
+
+===== H = 1 h | test rows 4116, positive rate 63.1% | bar B = hour_of_week_smooth, best logistic (by validation) = logreg[own+nbr+cty]+platt =====
+                    model                chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
+      hour_of_week_smooth            k=100|180d     0.2429 0.2309 [0.2248, 0.2367] 0.702 [0.665, 0.744]       1.24
+logreg[own+nbr+cty]+platt           C=0.001|90d     0.2313 0.2229 [0.2152, 0.2314] 0.728 [0.692, 0.761]       0.93
+                 hgb[own]  depth=3,iter=50|365d     0.2386 0.2274 [0.2211, 0.2343] 0.722 [0.681, 0.758]       1.28
+         hgb[own+nbr+cty] depth=2,iter=150|180d     0.2313 0.2212 [0.2135, 0.2295] 0.746 [0.709, 0.779]       1.10
+
+Paired difference to logreg[own+nbr+cty]+platt; Brier < 0 and PR-AUC > 0 mean better
+           model metric                difference  share_better
+        hgb[own] pr_auc -0.0054 [-0.0306, 0.0205]         0.334
+        hgb[own]  brier  0.0045 [-0.0003, 0.0087]         0.032
+hgb[own+nbr+cty] pr_auc   0.0183 [0.0045, 0.0315]         0.995
+hgb[own+nbr+cty]  brier -0.0017 [-0.0043, 0.0009]         0.900
+
+Paired difference to hour_of_week_smooth; Brier < 0 and PR-AUC > 0 mean better
+           model metric                 difference  share_better
+        hgb[own] pr_auc   0.0208 [-0.0021, 0.0416]         0.966
+        hgb[own]  brier -0.0034 [-0.0059, -0.0011]         0.997
+hgb[own+nbr+cty] pr_auc    0.0446 [0.0162, 0.0739]         0.998
+hgb[own+nbr+cty]  brier -0.0097 [-0.0146, -0.0047]         1.000
+
+POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
+                       vs metric                 difference  share_better
+                 constant  brier -0.0136 [-0.0196, -0.0077]         1.000
+                 hgb[own]  brier -0.0062 [-0.0100, -0.0023]         0.999
+             hour_of_week  brier -0.0128 [-0.0189, -0.0070]         1.000
+      hour_of_week_smooth  brier -0.0097 [-0.0146, -0.0047]         1.000
+      logreg[own+nbr+cty]  brier  -0.0004 [-0.0032, 0.0021]         0.609
+logreg[own+nbr+cty]+platt  brier  -0.0017 [-0.0043, 0.0009]         0.900
+          logreg[own+nbr]  brier  -0.0003 [-0.0029, 0.0023]         0.583
+    logreg[own+nbr]+platt  brier  -0.0016 [-0.0042, 0.0009]         0.898
+              logreg[own]  brier -0.0052 [-0.0094, -0.0013]         0.999
+        logreg[own]+platt  brier -0.0063 [-0.0103, -0.0024]         1.000
+          recent_activity  brier -0.0126 [-0.0187, -0.0068]         1.000
+                 constant pr_auc    0.1115 [0.0713, 0.1460]         1.000
+                 hgb[own] pr_auc    0.0238 [0.0045, 0.0424]         0.994
+             hour_of_week pr_auc    0.0459 [0.0181, 0.0734]         1.000
+      hour_of_week_smooth pr_auc    0.0446 [0.0162, 0.0739]         0.998
+      logreg[own+nbr+cty] pr_auc   0.0109 [-0.0024, 0.0239]         0.952
+logreg[own+nbr+cty]+platt pr_auc    0.0183 [0.0045, 0.0315]         0.995
+          logreg[own+nbr] pr_auc   0.0085 [-0.0040, 0.0215]         0.902
+    logreg[own+nbr]+platt pr_auc    0.0170 [0.0034, 0.0307]         0.992
+              logreg[own] pr_auc    0.0284 [0.0045, 0.0534]         0.989
+        logreg[own]+platt pr_auc    0.0379 [0.0145, 0.0613]         0.999
+          recent_activity pr_auc    0.0783 [0.0502, 0.1078]         1.000
+
+===== H = 3 h | test rows 4110, positive rate 93.0% | bar B = hour_of_week_smooth, best logistic (by validation) = logreg[own+nbr+cty] =====
+              model               chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope
+hour_of_week_smooth           k=100|180d     0.0838 0.0644 [0.0509, 0.0780] 0.945 [0.922, 0.966]       0.79
+logreg[own+nbr+cty]         C=0.001|180d     0.0820 0.0635 [0.0496, 0.0773] 0.962 [0.948, 0.975]       1.30
+           hgb[own] depth=2,iter=50|180d     0.0828 0.0639 [0.0501, 0.0777] 0.961 [0.948, 0.974]       0.99
+   hgb[own+nbr+cty] depth=3,iter=50|365d     0.0818 0.0640 [0.0503, 0.0778] 0.951 [0.929, 0.970]       0.99
+
+Paired difference to logreg[own+nbr+cty]; Brier < 0 and PR-AUC > 0 mean better
+           model metric                difference  share_better
+        hgb[own] pr_auc -0.0002 [-0.0064, 0.0061]         0.432
+        hgb[own]  brier  0.0004 [-0.0003, 0.0011]         0.134
+hgb[own+nbr+cty] pr_auc -0.0107 [-0.0247, 0.0028]         0.061
+hgb[own+nbr+cty]  brier  0.0005 [-0.0003, 0.0012]         0.072
+
+Paired difference to hour_of_week_smooth; Brier < 0 and PR-AUC > 0 mean better
+           model metric                difference  share_better
+        hgb[own] pr_auc   0.0162 [0.0014, 0.0329]         0.984
+        hgb[own]  brier -0.0005 [-0.0019, 0.0007]         0.801
+hgb[own+nbr+cty] pr_auc  0.0057 [-0.0122, 0.0230]         0.747
+hgb[own+nbr+cty]  brier -0.0004 [-0.0016, 0.0007]         0.765
+
+POST HOC (not part of the criterion): hgb[own+nbr+cty] against every other chosen family
+                       vs metric                 difference  share_better
+                 constant  brier  -0.0009 [-0.0026, 0.0005]         0.882
+                 hgb[own]  brier   0.0001 [-0.0005, 0.0007]         0.320
+             hour_of_week  brier -0.0025 [-0.0047, -0.0002]         0.981
+      hour_of_week_smooth  brier  -0.0004 [-0.0016, 0.0007]         0.765
+      logreg[own+nbr+cty]  brier   0.0005 [-0.0003, 0.0012]         0.072
+logreg[own+nbr+cty]+platt  brier  -0.0002 [-0.0010, 0.0006]         0.669
+          logreg[own+nbr]  brier   0.0005 [-0.0003, 0.0012]         0.076
+    logreg[own+nbr]+platt  brier  -0.0001 [-0.0010, 0.0009]         0.544
+              logreg[own]  brier   0.0001 [-0.0007, 0.0009]         0.363
+        logreg[own]+platt  brier  -0.0003 [-0.0013, 0.0005]         0.758
+          recent_activity  brier  -0.0012 [-0.0027, 0.0002]         0.953
+                 constant pr_auc    0.0276 [0.0056, 0.0506]         0.989
+                 hgb[own] pr_auc -0.0105 [-0.0226, -0.0000]         0.024
+             hour_of_week pr_auc   0.0049 [-0.0121, 0.0215]         0.733
+      hour_of_week_smooth pr_auc   0.0057 [-0.0122, 0.0230]         0.747
+      logreg[own+nbr+cty] pr_auc  -0.0107 [-0.0247, 0.0028]         0.061
+logreg[own+nbr+cty]+platt pr_auc  -0.0029 [-0.0168, 0.0114]         0.360
+          logreg[own+nbr] pr_auc  -0.0112 [-0.0253, 0.0023]         0.055
+    logreg[own+nbr]+platt pr_auc  -0.0009 [-0.0153, 0.0146]         0.481
+              logreg[own] pr_auc  -0.0067 [-0.0211, 0.0066]         0.190
+        logreg[own]+platt pr_auc   0.0098 [-0.0070, 0.0280]         0.896
+          recent_activity pr_auc    0.0295 [0.0076, 0.0529]         0.992

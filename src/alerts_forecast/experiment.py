@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from .baselines import constant_rate, hour_of_week_rate, make_smoothed_hour_of_week, recent_activity_rate
-from .features import FEATURE_SETS
+from .features import feature_sets
 from .metrics import brier
 from .models import make_hgb, make_logreg, make_platt
 from .walkforward import walk_forward
@@ -17,16 +17,20 @@ HGB_GRID = [(d, n) for d in (2, 3) for n in (50, 150)]  # (max_depth, iterations
 HGB_SETS = ("own", "own+nbr+cty")
 PRESET_BASELINES = ("constant", "recent_activity", "hour_of_week")
 POSTHOC = "hour_of_week_smooth"
+RECENT_LEVEL = "recent_level"  # post hoc 2: constant rate of the last W days, refit every day
+RL_WINDOWS = {"3d": 3, "7d": 7, "14d": 14, "30d": 30}
+POSTHOC_FAMILIES = (POSTHOC, RECENT_LEVEL)
 
 
-def configs(boosting: bool = False) -> list:
-    """(family, param, window label, fit_predict)"""
+def configs(neighbors, boosting: bool = False) -> list:
+    """(family, param, window label, fit_predict) for a region with the given neighbouring oblasts"""
+    sets = feature_sets(neighbors)
     out = []
     for w in BASE_WINDOWS:
         out += [("constant", "", w, constant_rate), ("recent_activity", "", w, recent_activity_rate),
                 ("hour_of_week", "", w, hour_of_week_rate)]
         out += [(POSTHOC, f"k={k}", w, make_smoothed_hour_of_week(k)) for k in K_GRID]
-    for set_name, cols in FEATURE_SETS.items():
+    for set_name, cols in sets.items():
         for w in LR_WINDOWS:
             for c in C_GRID:
                 base = make_logreg(cols, c)
@@ -35,8 +39,18 @@ def configs(boosting: bool = False) -> list:
     if boosting:
         for set_name in HGB_SETS:
             for w in LR_WINDOWS:
-                out += [(f"hgb[{set_name}]", f"depth={d},iter={n}", w, make_hgb(FEATURE_SETS[set_name], d, n)) for d, n in HGB_GRID]
+                out += [(f"hgb[{set_name}]", f"depth={d},iter={n}", w, make_hgb(sets[set_name], d, n)) for d, n in HGB_GRID]
     return out
+
+
+def run_recent_level(sample, h, start, end) -> pd.DataFrame:
+    """Adaptive baseline: base rate of the last W days only, refit every DAY (the other families refit weekly).
+
+    Added after the first results for other oblasts: where the alert rate jumps, static training windows are a weak bar.
+    """
+    parts = [walk_forward(sample, {f"{RECENT_LEVEL}||{w}": constant_rate}, h, start, end, window_days=d, fold_days=1)
+             for w, d in RL_WINDOWS.items()]
+    return pd.concat([parts[0][["y", "day"]], *[p.drop(columns=["y", "day"]) for p in parts]], axis=1)
 
 
 def run_configs(sample, h, start, end, all_configs) -> pd.DataFrame:
@@ -46,6 +60,7 @@ def run_configs(sample, h, start, end, all_configs) -> pd.DataFrame:
         models = {f"{fam}|{par}|{win}": fn for fam, par, win, fn in all_configs if win == w}
         if models:
             parts.append(walk_forward(sample, models, h, start, end, window_days=days))
+    parts.append(run_recent_level(sample, h, start, end))
     meta = parts[0][["y", "day"]]
     return pd.concat([meta, *[res.drop(columns=["y", "day"]) for res in parts]], axis=1)
 
@@ -58,7 +73,7 @@ class Evaluation:
     val_brier: dict
     chosen: dict      # family -> configuration label chosen on validation
     bar_a: str        # best of the pre-specified baselines
-    bar_b: str        # best including the post-hoc smoothed one
+    bar_b: str        # best including the post-hoc baselines (smoothed hour of week, recent level)
     lr_best: str      # logistic family with the best validation Brier
     res: pd.DataFrame  # test: y, day, prev_naive and one column per family (chosen configuration)
 
@@ -75,7 +90,7 @@ def evaluate(sample, h, val_start, test_start, test_end, all_configs=None) -> Ev
             chosen[fam] = c
     fam_b = lambda f: val_brier[chosen[f]]  # noqa: E731
     bar_a = min(PRESET_BASELINES, key=fam_b)
-    bar_b = min((*PRESET_BASELINES, POSTHOC), key=fam_b)
+    bar_b = min((*PRESET_BASELINES, *POSTHOC_FAMILIES), key=fam_b)
     lr_best = min((f for f in chosen if f.startswith("logreg")), key=fam_b)  # hgb families are compared to it
     res = test[["y", "day"]].copy()
     res["prev_naive"] = sample.loc[res.index, "prev_naive"].to_numpy()

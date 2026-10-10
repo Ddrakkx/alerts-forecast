@@ -1,0 +1,46 @@
+region Lvivska oblast
+===== A. Evaluation subsets (volunteer, full period) =====
+
+[volunteer] H=3: test 2026-08-14..2026-10-09, bar B = hour_of_week_smooth (k=100|90d), logreg chosen = C=0.001|180d
+  all rows                           rows= 4844 pos=41.9% | hour_of_week_smooth PR-AUC 0.406, Brier 0.2550
+      logreg[own+nbr+cty]      PR-AUC 0.524  diff 0.118 [0.036, 0.190] | Brier 0.2350  diff -0.0200 [-0.0344, -0.0074]
+      logreg[own+nbr+cty]+platt PR-AUC 0.484  diff 0.078 [0.005, 0.151] | Brier 0.2437  diff -0.0113 [-0.0288, 0.0045]
+  without naive-affected moments     rows= 4703 pos=42.4% | hour_of_week_smooth PR-AUC 0.415, Brier 0.2561
+      logreg[own+nbr+cty]      PR-AUC 0.533  diff 0.118 [0.035, 0.189] | Brier 0.2350  diff -0.0211 [-0.0361, -0.0083]
+      logreg[own+nbr+cty]+platt PR-AUC 0.486  diff 0.071 [-0.007, 0.144] | Brier 0.2449  diff -0.0113 [-0.0293, 0.0051]
+  without the last 24 h              rows= 4754 pos=42.0% | hour_of_week_smooth PR-AUC 0.405, Brier 0.2554
+      logreg[own+nbr+cty]      PR-AUC 0.526  diff 0.120 [0.036, 0.197] | Brier 0.2347  diff -0.0207 [-0.0345, -0.0076]
+      logreg[own+nbr+cty]+platt PR-AUC 0.485  diff 0.079 [-0.001, 0.151] | Brier 0.2439  diff -0.0115 [-0.0291, 0.0039]
+
+[volunteer] H=1: test 2026-08-14..2026-10-09, bar B = hour_of_week_smooth (k=100|90d), logreg chosen = C=0.003|180d
+  all rows                           rows= 4852 pos=17.5% | hour_of_week_smooth PR-AUC 0.163, Brier 0.1478
+      logreg[own+nbr+cty]      PR-AUC 0.242  diff 0.079 [0.034, 0.122] | Brier 0.1418  diff -0.0060 [-0.0108, -0.0022]
+      logreg[own+nbr+cty]+platt PR-AUC 0.189  diff 0.025 [-0.004, 0.055] | Brier 0.1455  diff -0.0024 [-0.0059, 0.0012]
+  without naive-affected moments     rows= 4711 pos=17.7% | hour_of_week_smooth PR-AUC 0.167, Brier 0.1498
+      logreg[own+nbr+cty]      PR-AUC 0.247  diff 0.080 [0.035, 0.124] | Brier 0.1434  diff -0.0063 [-0.0113, -0.0025]
+      logreg[own+nbr+cty]+platt PR-AUC 0.202  diff 0.035 [0.005, 0.066] | Brier 0.1464  diff -0.0033 [-0.0066, -0.0002]
+  without the last 24 h              rows= 4762 pos=17.5% | hour_of_week_smooth PR-AUC 0.162, Brier 0.1482
+      logreg[own+nbr+cty]      PR-AUC 0.242  diff 0.080 [0.033, 0.124] | Brier 0.1421  diff -0.0061 [-0.0105, -0.0020]
+      logreg[own+nbr+cty]+platt PR-AUC 0.189  diff 0.026 [-0.009, 0.060] | Brier 0.1458  diff -0.0024 [-0.0057, 0.0011]
+
+===== B. Volunteer vs official source, identical protocol, data end 2026-08-29 =====
+
+[volunteer] H=3: test 2026-07-04..2026-08-29, bar B = recent_activity (|180d), logreg chosen = C=0.001|180d
+  all rows                           rows= 4899 pos=38.3% | recent_activity PR-AUC 0.454, Brier 0.2546
+      logreg[own+nbr+cty]      PR-AUC 0.465  diff 0.011 [-0.026, 0.058] | Brier 0.2430  diff -0.0116 [-0.0190, -0.0046]
+      logreg[own+nbr+cty]+platt PR-AUC 0.425  diff -0.028 [-0.076, 0.023] | Brier 0.2401  diff -0.0145 [-0.0243, -0.0048]
+
+[official] H=3: test 2026-07-04..2026-08-29, bar B = recent_activity (|365d), logreg chosen = C=0.001|90d
+  all rows                           rows= 5356 pos=0.9% | recent_activity PR-AUC 0.014, Brier 0.0099
+      logreg[own+nbr+cty]      PR-AUC 0.050  diff 0.036 [-0.006, 0.142] | Brier 0.0092  diff -0.0007 [-0.0012, -0.0003]
+      logreg[own+nbr+cty]+platt PR-AUC 0.022  diff 0.009 [-0.009, 0.072] | Brier 0.0094  diff -0.0006 [-0.0011, 0.0002]
+
+[volunteer] H=1: test 2026-07-04..2026-08-29, bar B = recent_activity (|90d), logreg chosen = C=0.001|180d
+  all rows                           rows= 4907 pos=15.4% | recent_activity PR-AUC 0.198, Brier 0.1333
+      logreg[own+nbr+cty]      PR-AUC 0.216  diff 0.018 [-0.003, 0.039] | Brier 0.1308  diff -0.0024 [-0.0045, -0.0008]
+      logreg[own+nbr+cty]+platt PR-AUC 0.197  diff -0.001 [-0.027, 0.022] | Brier 0.1300  diff -0.0033 [-0.0059, -0.0011]
+
+[official] H=1: test 2026-07-04..2026-08-29, bar B = recent_activity (|365d), logreg chosen = C=0.001|90d
+  all rows                           rows= 5364 pos=0.3% | recent_activity PR-AUC 0.005, Brier 0.0031
+      logreg[own+nbr+cty]      PR-AUC 0.086  diff 0.081 [-0.001, 0.298] | Brier 0.0029  diff -0.0002 [-0.0004, -0.0000]
+      logreg[own+nbr+cty]+platt PR-AUC 0.081  diff 0.077 [-0.002, 0.249] | Brier 0.0032  diff 0.0000 [-0.0007, 0.0009]

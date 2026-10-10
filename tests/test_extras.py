@@ -98,3 +98,20 @@ def test_hgb_is_deterministic_and_ignores_test_labels():
     assert np.allclose(p1, fn(train, test.assign(y=~test["y"]), 3))
     assert np.allclose(p1, make_hgb(["x"], 2, 30)(train, test, 3))
     assert np.corrcoef(p1, test["x"])[0, 1] > 0.8 and 0 < p1.min() and p1.max() < 1
+
+
+def test_models_survive_a_training_window_with_one_class():
+    from alerts_forecast.models import make_hgb
+
+    df = _toy(n=600)
+    train, test = df.iloc[:400].assign(y=False), df.iloc[400:]
+    for fn in (make_logreg(["x"], 1.0), make_hgb(["x"], 2, 20)):
+        assert fn(train, test, 3).tolist() == [0.0] * len(test)
+    # Platt falls back to the raw probabilities when the newest cal_days contain one class only
+    h, cal_days = 3, 10
+    full = df.iloc[:500].copy()
+    cal_start = full.index.max() - pd.Timedelta(days=cal_days)
+    full.loc[full.index > cal_start, "y"] = False  # the calibration part is single-class
+    fit_part = full.loc[full.index <= cal_start - pd.Timedelta(hours=h)]
+    expected = make_logreg(["x"], 1.0)(fit_part, test, h)
+    assert np.allclose(make_platt(make_logreg(["x"], 1.0), cal_days=cal_days)(full, test, h), expected)

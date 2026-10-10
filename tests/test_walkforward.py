@@ -140,3 +140,19 @@ def test_logreg_fit_predict_uses_only_train_rows_for_fitting():
     flipped = test.assign(y=~test["y"])
     assert np.allclose(p1, make_logreg(["x"], 1.0)(train, flipped, 3))  # test labels are ignored
     assert np.corrcoef(p1, test["x"])[0, 1] > 0.9 and p1.min() >= 0 and p1.max() <= 1
+
+
+def test_recent_level_baseline_uses_only_the_last_days_before_each_day():
+    from alerts_forecast.experiment import RECENT_LEVEL, run_recent_level
+
+    idx = pd.date_range("2026-01-01", periods=40 * 96, freq="15min", tz="UTC")
+    day = np.arange(len(idx)) // 96
+    sample = pd.DataFrame({"y": (day >= 20).astype(int), "minutes_since_last_end": 100.0}, index=idx)  # level jumps on day 20
+    start, end = pd.Timestamp("2026-01-31", tz="UTC"), pd.Timestamp("2026-02-05", tz="UTC")
+    out = run_recent_level(sample, 3, start, end)
+    assert len(out) > 0 and {f"{RECENT_LEVEL}||3d", f"{RECENT_LEVEL}||30d"} <= set(out.columns)
+    # long after the jump the 3-day window knows the new level, the 30-day window is still mixed
+    assert np.allclose(out[f"{RECENT_LEVEL}||3d"], 1.0) and out[f"{RECENT_LEVEL}||30d"].between(0.2, 0.6).all()
+    # purge: the training rows used for a day end at least H hours before that day starts
+    first = out.index.min()
+    assert out.loc[first, f"{RECENT_LEVEL}||3d"] == sample.loc[(sample.index > first - pd.Timedelta(hours=3, days=3)) & (sample.index <= first - pd.Timedelta(hours=3)), "y"].mean()

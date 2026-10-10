@@ -146,3 +146,27 @@ Template for each entry:
 - Mistake of mine during this step: a string with a line break in the post-hoc block made the script fail and overwrote the
   saved first-run output. The first run had been copied beforehand, so nothing was lost; now the script is compile-checked before long runs.
 - Time box closed: no further model work.
+
+## 7. More oblasts, and a second post-hoc baseline (written before the re-run)
+- Oblasts, each run completely separately (own neighbour list, own hyperparameters chosen on its own validation block, own
+  bar, own bootstrap): Poltavska (the main one), Kyivska, Kharkivska, Lvivska. `scripts/run_region.sh "<region>"`, outputs in
+  results/<region>/, headline numbers collected by `scripts/summarize_regions.py` into results/summary.md.
+- Why Lvivska and not a quieter western oblast: in the last 8 weeks Zakarpatska has 0 alerts (nothing to evaluate), Ivano-Frankivska 8,
+  Ternopilska 21, Chernivetska 36. Lvivska has 245 (Poltavska 382), so it is the quietest western one that can be tested.
+- Neighbour lists (from my knowledge of the map, NOT from the data; to be checked on a map):
+  Kyivska: Zhytomyrska, Chernihivska, Poltavska, Cherkaska, Vinnytska, Kyiv City (an enclave inside the oblast).
+  Kharkivska: Sumska, Poltavska, Dnipropetrovska, Donetska (Luhanska is not in the data).
+  Lvivska: Volynska, Rivnenska, Ternopilska, Ivano-Frankivska, Zakarpatska. Poltavska unchanged.
+- Check after the refactor: Poltavska results are identical to the committed ones (all three result files, compared by sorted content).
+- FINDING that changed the plan: in the new oblasts the first runs showed large Brier gains over the bar (Kyivska H=3: -0.049 [-0.064, -0.034]).
+  The positive rate there jumps between validation and test (Kyivska H=1: 16% -> 40%; H=3: 39% -> 74%), and every baseline had a static
+  training window of at least 90 days (or refit weekly). A diagnostic, written down as post hoc: the constant rate over the last W days refit
+  DAILY gives for Kyivska H=3 a test Brier of 0.180 (W=14 d), against 0.1755 for the logistic regression and 0.2243 for the old bar.
+  Most of the "gain" in Kyivska and Lvivska was tracking of the changing rate, not predicting onsets. The baselines were weak for such oblasts;
+  in the stable Poltavska this did not show.
+- Decision: add `recent_level` (constant rate of the last W in {3, 7, 14, 30} days, refit daily) as a second post-hoc baseline for all oblasts,
+  Poltavska included; the bar is the best of all baselines on validation. Poltavska numbers may therefore change; whatever comes out is reported.
+- Rule kept: the window W is chosen on validation. In Kyivska H=1 validation picked W=90 d (0.1354) and the test then punished that choice
+  (0.2674 vs 0.2283 for W=3 d), a choice the validation block could not foresee. I do not change the rule after seeing it; it is a result.
+- Safety for quiet oblasts: models fall back to the base rate when a training window has a single class; Platt scaling keeps raw
+  probabilities when its calibration part has a single class (tested).

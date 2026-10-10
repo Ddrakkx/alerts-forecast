@@ -1,6 +1,6 @@
-data end 2026-10-09 05:12 UTC | validation 2026-06-19..2026-08-14 | test 2026-08-14..2026-10-09
+region Poltavska oblast | neighbours 7 | data end 2026-10-09 05:12 UTC | validation 2026-06-19..2026-08-14 | test 2026-08-14..2026-10-09
 
-===== H = 3 h (main)  [30s] =====
+===== H = 3 h (main)  [39s] =====
 test rows 4474, days 57, positive rate 66.3%; validation rows 4373, positive rate 66.9%
 bar A (pre-specified baselines) = constant | bar B (incl. post-hoc smoothed) = hour_of_week_smooth
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
@@ -101,7 +101,7 @@ cty_starts_3h          0.037
 own_starts_7d          0.037
 cty_active_n           0.033
 
-===== H = 1 h   [30s] =====
+===== H = 1 h   [41s] =====
 test rows 4482, days 57, positive rate 30.0%; validation rows 4373, positive rate 31.0%
 bar A (pre-specified baselines) = constant | bar B (incl. post-hoc smoothed) = constant
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt
@@ -187,7 +187,7 @@ own_starts_7d               0.042
 is_weekend                 -0.022
 nbr_active_kirovohradska    0.020
 
-===== H = 6 h   [30s] =====
+===== H = 6 h   [42s] =====
 test rows 4462, days 57, positive rate 88.8%; validation rows 4373, positive rate 88.0%
 bar A (pre-specified baselines) = constant | bar B (incl. post-hoc smoothed) = hour_of_week_smooth
                        family       chosen  val_brier        test_brier [95%]    test_pr_auc [95%]  cal_slope  cal_icpt

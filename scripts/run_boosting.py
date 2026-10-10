@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from alerts_forecast.data import REGION, load_regions  # noqa: E402
 from alerts_forecast.experiment import configs, evaluate  # noqa: E402
-from alerts_forecast.features import build_features  # noqa: E402
+from alerts_forecast.features import build_features, neighbors_of  # noqa: E402
 from alerts_forecast.metrics import calibration_slope_intercept, day_block_bootstrap  # noqa: E402
 from alerts_forecast.target import build_frame, main_sample  # noqa: E402
 
@@ -29,14 +29,18 @@ def fmt(v, lo, hi, digits=4) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--region", default=REGION)
     ap.add_argument("--boot", type=int, default=1000)
     args = ap.parse_args()
     regions, data_end = load_regions(ROOT / "data" / "raw" / "volunteer_data_en.csv")
-    alerts = regions[REGION]
+    region = args.region
+    alerts = regions[region]
+    nbrs = neighbors_of(region)
+    print(f"region {region} | neighbours {len(nbrs)}")
     test_start = data_end.floor("D") - pd.Timedelta(weeks=8)
     val_start = test_start - pd.Timedelta(weeks=8)
-    feats = build_features(regions, REGION, build_frame(alerts, data_end, 1).index)
-    all_configs = configs(boosting=True)
+    feats = build_features(regions, region, build_frame(alerts, data_end, 1).index, nbrs)
+    all_configs = configs(nbrs, boosting=True)
 
     for h in (1, 3):
         sample = main_sample(build_frame(alerts, data_end, h)).join(feats)

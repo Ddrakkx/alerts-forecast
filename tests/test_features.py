@@ -6,13 +6,14 @@ import pytest
 
 from alerts_forecast.data import load_regions
 from alerts_forecast.features import (
-    FEATURE_SETS, NEIGHBORS, active_time_before, build_features, count_starts, minutes_since_last_start,
+    NEIGHBORS_BY_REGION, active_time_before, build_features, count_starts, feature_sets, minutes_since_last_start, nbr_column,
 )
 from alerts_forecast.leakage import truncate_regions, truncation_violations
 from test_leakage import ONE_MIN, probe_times, random_alerts
 
 REAL_FILE = Path(__file__).resolve().parents[1] / "data" / "raw" / "volunteer_data_en.csv"
 TARGET = "Poltavska oblast"
+NEIGHBORS = NEIGHBORS_BY_REGION[TARGET]
 
 
 def synthetic_regions() -> dict:
@@ -27,7 +28,7 @@ def ns(ts):
 def test_feature_sets_only_name_existing_columns():
     regions = synthetic_regions()
     cols = set(build_features(regions, TARGET, pd.DatetimeIndex([regions[TARGET]["started_at"].iloc[50]])).columns)
-    for name, names in FEATURE_SETS.items():
+    for name, names in feature_sets(NEIGHBORS).items():
         assert set(names) <= cols, name
         assert len(names) == len(set(names))
     assert "y" not in cols and "active" not in cols
@@ -64,7 +65,7 @@ def test_neighbour_flag_is_active_between_start_and_end_only():
     regions = synthetic_regions()
     nb = NEIGHBORS[0]
     a = regions[nb].iloc[10]
-    key = f"nbr_active_{nb.split()[0].lower()}"
+    key = nbr_column(nb)
     idx = pd.DatetimeIndex([a["started_at"] - ONE_MIN, a["started_at"], a["finished_at"] - ONE_MIN, a["finished_at"]])
     got = build_features(regions, TARGET, idx)[key].tolist()
     own = regions[nb]
@@ -107,4 +108,27 @@ def test_features_do_not_depend_on_the_future_real_data():
     recent = regions[TARGET].loc[regions[TARGET]["started_at"] >= data_end - pd.Timedelta(days=60)]
     times = probe_times(recent.reset_index(drop=True), n=80)
     fn = lambda d, idx: build_features(d, TARGET, idx)  # noqa: E731
+    assert truncation_violations(fn, regions, times, truncate=truncate_regions) == []
+
+
+def test_every_region_has_a_unique_neighbour_list_and_distinct_column_names():
+    from alerts_forecast.features import neighbors_of
+
+    for region, nbrs in NEIGHBORS_BY_REGION.items():
+        assert region not in nbrs and len(set(nbrs)) == len(nbrs)
+        cols = [nbr_column(n) for n in nbrs]
+        assert len(set(cols)) == len(cols), region
+        assert neighbors_of(region) == nbrs
+    with pytest.raises(KeyError, match="neighbour list"):
+        neighbors_of("Odeska oblast")
+
+
+def test_features_work_for_another_region_with_its_own_neighbours():
+    names = ["Kyivska oblast", *NEIGHBORS_BY_REGION["Kyivska oblast"], "Odeska oblast"]
+    regions = {n: random_alerts(n=200, seed=50 + i) for i, n in enumerate(names)}
+    times = probe_times(regions["Kyivska oblast"], n=30)
+    out = build_features(regions, "Kyivska oblast", pd.DatetimeIndex(times[:10]))
+    cols = feature_sets(NEIGHBORS_BY_REGION["Kyivska oblast"])["own+nbr+cty"]
+    assert set(cols) <= set(out.columns) and "nbr_active_kyiv" in out.columns and "nbr_active_kyivska" not in out.columns
+    fn = lambda d, idx: build_features(d, "Kyivska oblast", idx)  # noqa: E731
     assert truncation_violations(fn, regions, times, truncate=truncate_regions) == []

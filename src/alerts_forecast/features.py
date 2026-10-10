@@ -10,11 +10,17 @@ import pandas as pd
 from .target import _ns, state_at
 
 KYIV = "Europe/Kyiv"
-# From my memory of the map, NOT from the data (no geometry in the dataset). Check on a map.
-NEIGHBORS = (
-    "Chernihivska oblast", "Sumska oblast", "Kharkivska oblast", "Dnipropetrovska oblast",
-    "Kirovohradska oblast", "Cherkaska oblast", "Kyivska oblast",
-)
+# Neighbouring oblasts, from my knowledge of the map, NOT from the data (the dataset has no geometry). To be checked on a map.
+# Luhanska oblast is not in the data (permanent siren). "Kyiv City" is an enclave inside Kyivska oblast.
+NEIGHBORS_BY_REGION = {
+    "Poltavska oblast": ("Chernihivska oblast", "Sumska oblast", "Kharkivska oblast", "Dnipropetrovska oblast",
+                         "Kirovohradska oblast", "Cherkaska oblast", "Kyivska oblast"),
+    "Kyivska oblast": ("Zhytomyrska oblast", "Chernihivska oblast", "Poltavska oblast", "Cherkaska oblast",
+                       "Vinnytska oblast", "Kyiv City"),
+    "Kharkivska oblast": ("Sumska oblast", "Poltavska oblast", "Dnipropetrovska oblast", "Donetska oblast"),
+    "Lvivska oblast": ("Volynska oblast", "Rivnenska oblast", "Ternopilska oblast", "Ivano-Frankivska oblast",
+                       "Zakarpatska oblast"),
+}
 MIN = np.timedelta64(1, "m")
 
 
@@ -54,8 +60,19 @@ def minutes_since_last_start(alerts, t: np.ndarray, cap: float) -> np.ndarray:
     return np.where(i >= 0, np.minimum(since, cap), cap)
 
 
-def build_features(by_region: dict, target: str, times) -> pd.DataFrame:
+def neighbors_of(region: str) -> tuple:
+    if region not in NEIGHBORS_BY_REGION:
+        raise KeyError(f"no neighbour list for {region!r}; add it to NEIGHBORS_BY_REGION")
+    return NEIGHBORS_BY_REGION[region]
+
+
+def nbr_column(name: str) -> str:
+    return f"nbr_active_{name.split()[0].lower()}"
+
+
+def build_features(by_region: dict, target: str, times, neighbors=None) -> pd.DataFrame:
     """Own, neighbour and country-wide features for the given moments (a tz-aware DatetimeIndex)."""
+    neighbors = neighbors_of(target) if neighbors is None else neighbors
     times = pd.DatetimeIndex(times)
     t = _ns(times)
     own = by_region[target]
@@ -75,14 +92,14 @@ def build_features(by_region: dict, target: str, times) -> pd.DataFrame:
     f["is_weekend"] = (times.tz_convert(KYIV).dayofweek >= 5).astype(float)
 
     nbr_active = []
-    for name in NEIGHBORS:
+    for name in neighbors:
         a = state_at(by_region[name], times)["active"].to_numpy()
-        f[f"nbr_active_{name.split()[0].lower()}"] = a.astype(float)
+        f[nbr_column(name)] = a.astype(float)
         nbr_active.append(a)
     f["nbr_active_n"] = np.sum(nbr_active, axis=0).astype(float)
     for name, w in (("1h", pd.Timedelta(hours=1)), ("3h", pd.Timedelta(hours=3))):
-        f[f"nbr_starts_{name}"] = sum(count_starts(by_region[n], t, w) for n in NEIGHBORS)
-    since_start = np.min([minutes_since_last_start(by_region[n], t, 1440.0) for n in NEIGHBORS], axis=0)
+        f[f"nbr_starts_{name}"] = sum(count_starts(by_region[n], t, w) for n in neighbors)
+    since_start = np.min([minutes_since_last_start(by_region[n], t, 1440.0) for n in neighbors], axis=0)
     f["nbr_log_since_start"] = np.log1p(since_start)
 
     others = [r for r in by_region if r != target]
@@ -94,7 +111,9 @@ def build_features(by_region: dict, target: str, times) -> pd.DataFrame:
 
 _OWN = ["own_log_since_end", "own_starts_3h", "own_starts_24h", "own_starts_7d", "own_active_frac_24h",
         "tod_sin1", "tod_cos1", "tod_sin2", "tod_cos2", "is_weekend"]
-_NBR = [f"nbr_active_{n.split()[0].lower()}" for n in NEIGHBORS] + [
-    "nbr_active_n", "nbr_starts_1h", "nbr_starts_3h", "nbr_log_since_start"]
 _CTY = ["cty_active_n", "cty_starts_1h", "cty_starts_3h", "cty_starts_24h"]
-FEATURE_SETS = {"own": _OWN, "own+nbr": _OWN + _NBR, "own+nbr+cty": _OWN + _NBR + _CTY}
+
+
+def feature_sets(neighbors) -> dict:
+    nbr = [nbr_column(n) for n in neighbors] + ["nbr_active_n", "nbr_starts_1h", "nbr_starts_3h", "nbr_log_since_start"]
+    return {"own": _OWN, "own+nbr": _OWN + nbr, "own+nbr+cty": _OWN + nbr + _CTY}
