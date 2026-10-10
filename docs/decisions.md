@@ -81,7 +81,7 @@ Template for each entry:
   because the expected value equalled the fallback value. Rewritten so the slot mean differs from the global mean.
 - Model: standardised logistic regression, grid C in {0.01, 0.1, 1} x window {365, 180, 90 d}, chosen on validation by Brier.
   Post-hoc smoothed hour_of_week: k in {25, 100, 400, 1600}.
-- Results (test, last 8 weeks; scripts/run_experiment.py, full output in results/experiment_2026-10-09.txt):
+- Results (test, last 8 weeks; scripts/run_experiment.py, full output in results/experiment_v1_narrow_grid_superseded.txt):
   - Best baseline (bar): constant rate. The smoothed hour_of_week chose k=1600, the edge of the grid, and equals the constant.
     So the hour of the week carries no usable signal in these data beyond the base rate (also at H=1, H=6).
   - H=3: PR-AUC of logreg[own+nbr+cty] 0.727 vs 0.659 for the bar, paired difference +0.069 [0.018, 0.116]. Brier 0.2218 vs 0.2241,
