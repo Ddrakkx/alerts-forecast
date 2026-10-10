@@ -78,6 +78,19 @@ def posthoc(lines, vs: str) -> dict:
     return res
 
 
+def strict_refs(lines) -> tuple:
+    """(best baseline on the test block by Brier, by PR-AUC) from an experiment section."""
+    text = NL.join(lines)
+    return (re.search(r"by Brier \(oracle\) = (\S+)", text)[1],
+            re.search(r"by PR-AUC \(oracle\) = (\S+)", text)[1])
+
+
+def strict_model_diffs(lines, model: str = MODEL) -> dict:
+    """{'pr_auc': (d, lo, hi), 'brier': (d, lo, hi)} of `model` against the strict reference of each metric."""
+    ref_b, ref_p = strict_refs(lines)
+    return {"pr_auc": diffs(lines, ref_p, model).get("pr_auc"), "brier": diffs(lines, ref_b, model).get("brier")}
+
+
 def fmt_diff(d, digits) -> str:
     if not d:
         return "n/a"
@@ -102,8 +115,7 @@ def table(title: str, mode: str, horizons) -> list:
             if mode == "bar":  # one reference for both metrics
                 ref_b = ref_p = re.search(r"bar B \(incl\. post-hoc baselines\) = (\S+)", text)[1]
             else:  # the strict reference is chosen separately for each metric
-                ref_b = re.search(r"by Brier \(oracle\) = (\S+)", text)[1]
-                ref_p = re.search(r"by PR-AUC \(oracle\) = (\S+)", text)[1]
+                ref_b, ref_p = strict_refs(lines)
             rows = {m["fam"]: m for m in map(ROW.match, lines) if m}
             lg_p, lg_b = diffs(lines, ref_p, MODEL), diffs(lines, ref_b, MODEL)
             hg_p = hg_b = {}

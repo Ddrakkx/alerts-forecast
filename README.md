@@ -34,6 +34,18 @@ same tables against the baseline chosen on the validation block, and H = 6 h. �
 | Lvivska | 1 h | 17.5% / 12.8% | recent level | 0.1446 / 0.201 | +0.041 [+0.004, +0.074] † | -0.0027 [-0.0060, +0.0003] | +0.031 [+0.001, +0.065] † | -0.0018 [-0.0049, +0.0011] |
 | | 3 h | 41.9% / 33.2% | recent level / hour of week | 0.2466 / 0.456 | +0.068 [-0.006, +0.138] | -0.0116 [-0.0244, -0.0006] † | +0.042 [-0.026, +0.116] | -0.0053 [-0.0175, +0.0064] |
 
+The same differences for all five horizons (logistic regression with all features; boosting is in the tables):
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/diff_pr_auc_dark.png">
+  <img src="docs/figures/diff_pr_auc.png" alt="PR-AUC difference between logistic regression and the best baseline on the test block, with 95% intervals, for Poltava, Kyiv oblast, Kharkiv and Lviv at 15 min, 30 min, 1 h, 3 h and 6 h. Every Poltava interval contains zero; Kyiv and Kharkiv intervals are above zero at 15 min to 1 h.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/diff_brier_dark.png">
+  <img src="docs/figures/diff_brier.png" alt="Brier score difference between logistic regression and the best baseline on the test block, with 95% intervals, per oblast and horizon. Negative is better. Kyiv and Kharkiv are below zero at 15 min to 1 h; Poltava stays at zero; Lviv is worse than the baseline at 15 min.">
+</picture>
+
 What this says, and what it does not:
 
 - **Poltava (main oblast): no demonstrated gain** over the strongest simple baseline, at any horizon, for either model; this also holds at the
@@ -120,6 +132,12 @@ The same pattern happened earlier with a narrow hyperparameter grid (a significa
   instead the persistence baseline is "an alert ended within the last `H` hours".
 - **End of data** = the latest timestamp anywhere in the file (2026-10-09 05:12:41 UTC); the last usable `t` is `end - H`.
 - The positive rate is not stable: for Poltava H=3 it ranges 17-59% by month in 2022-2025 and 61-68% since May 2026 (`scripts/target_by_month.py --region ...`).
+  In Kyiv oblast it jumps inside the evaluation period itself, which is why static baselines were too weak there (see "How the conclusion changed").
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/positive_rate_by_month_dark.png">
+  <img src="docs/figures/positive_rate_by_month.png" alt="Monthly share of moments without an alert that are followed by a new alert within 3 hours, 2022 to September 2026, for Poltava, Kyiv oblast, Kharkiv and Lviv, with the validation and test blocks shaded. Kharkiv rises to about 92%, Poltava to 68%, Kyiv oblast jumps from about 37% in July to 82% in September, inside the evaluation blocks; Lviv rises to 42%.">
+</picture>
 
 ## Data
 
@@ -202,6 +220,7 @@ python -m pytest                  # about 1 minute, 52 tests
 bash scripts/run_region.sh "Poltavska oblast"   # experiment + robustness + boosting + short horizons for one oblast, roughly 20 minutes
 bash scripts/run_region.sh "Kyivska oblast"     # also: Kharkivska oblast, Lvivska oblast
 python scripts/summarize_regions.py             # builds results/summary.md from the saved outputs
+python scripts/make_figures.py                  # README figures (light and dark) into docs/figures/
 ```
 
 Results are deterministic (fixed seeds). The outputs of the runs used in this README are in `results/<oblast>/`.
@@ -221,6 +240,7 @@ Results are deterministic (fixed seeds). The outputs of the runs used in this RE
 | `results/<oblast>/` | `experiment.txt`, `boosting.txt`, `robustness.txt` (main horizons), `experiment_short.txt`, `boosting_short.txt` (15/30 min) |
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
 | `docs/decisions.md` | decision log: options, choices, risks, mistakes and retractions |
+| `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
 
 ## License
 
