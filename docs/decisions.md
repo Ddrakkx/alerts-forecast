@@ -227,3 +227,25 @@ Template for each entry:
 - Mistakes in this step: the shell mangled a line break in a scripted edit once more (I switched to direct file edits for anything with backslashes);
   one comparison of mine selected the wrong horizon range and one summary check compared tables of different sizes, both found before drawing conclusions;
   one README sentence said "three times" for four changes.
+
+## 9. Pre-registration of the holdout test on a new snapshot (written 2026-10-10, before any new data is downloaded)
+Why: the current test block (2026-08-14..10-09) has been looked at many times and choices were made after seeing it (see decision 10).
+The only block nobody has seen is the data that arrives after the current snapshot. Everything below is fixed now.
+
+- Data: a new snapshot of Vadimkin/ukrainian-air-raid-sirens-dataset, volunteer file, downloaded on Monday 2026-10-12; its commit SHA is recorded.
+- First step, before any model: compare the two snapshots for alerts that started before the old end (2026-10-09 05:12:41 UTC):
+  count added, removed and changed records per oblast. This checks the "late additions" point of the external review. The numbers are reported whatever they are.
+- Holdout moments: the 15-minute grid with old end < t <= new end - H, main sample only (no alert active at t). Expected length: about 3 days.
+- Selection, exactly as the protocol: validation = the 8 weeks before the holdout start (= the old test block), with a purge of H before the holdout start;
+  each family's configuration is chosen by validation Brier. The model is the logistic family with the best validation Brier (`lr_best`);
+  the reference is the baseline family with the best validation Brier (bar B, post-hoc baselines included). One training fold:
+  rows with t <= holdout start - H; recent_level is refit daily as in the pipeline.
+- Primary question (planned): Poltavska, H = 3 h, lr_best vs bar B, PR-AUC and Brier. Prediction from the current results: no gain.
+- Secondary questions: Kyivska and Kharkivska at 15 min, 30 min, 1 h: lr_best vs bar B. Prediction: gains (dPR-AUC > 0, dBrier < 0).
+  Lvivska is reported with the data warning (decision 10). Also reported, as a hindsight bound only: the best baseline configuration on the holdout.
+- Intervals: paired bootstrap over 6-hour blocks of the Kyiv clock (1000 draws, seed 0); day or week blocks are impossible with about 3 days.
+  A difference counts only if the 95% interval excludes zero; otherwise the cell is "inconclusive", never "no difference".
+  Stated in advance: with about 3 days most cells will probably be inconclusive.
+- A cell is "not evaluable" if the holdout has fewer than 10 positive or fewer than 10 negative moments for it.
+- Frozen code: the holdout runner and all fixes of decision 10 are committed and tagged `holdout-freeze` before the download.
+  After the download only data-free changes are forbidden to the analysis; if a bug blocks the run, the fix is a separate commit described as a deviation.
