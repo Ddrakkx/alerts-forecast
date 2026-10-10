@@ -160,6 +160,7 @@ The runner (`scripts/run_holdout.py`) is committed and tagged `holdout-freeze` b
 - **Late additions**: according to the external review, earlier snapshots miss 1-2 alerts that were added later (up to 14 days late, all naive). I have not verified this;
   the Monday holdout compares the snapshots first.
 - Luhansk oblast is excluded from country-wide counts (permanent siren, not a series). Crimea is not in the data.
+- **Alert levels (yellow / red)**: since about September 2026 Ukraine announces two levels (yellow = drone raid, red = missile or massed attack; decision 12). Neither of our files has a level, so after that date the target mixes both kinds of alert in a way we cannot separate. A live logger of the eMap feed (`demo/emap_logger.py`, one request per minute) collects levels for a later comparison.
 - Raw data is not stored in the repository: `python scripts/download_data.py`.
 
 ## Leakage controls
@@ -248,7 +249,7 @@ Results are deterministic (fixed seeds). The outputs of the runs used in this RE
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
 | `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, the review and the holdout pre-registration |
 | `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
-| `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only) |
+| `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only); live eMap logger (`emap_logger.py`) |
 
 ## License
 

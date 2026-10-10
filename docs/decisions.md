@@ -315,3 +315,36 @@ A second agent reviewed the repository. I re-computed its main claims with my ow
 - Mistakes on the way: a scripted edit failed on an escaped line break (same trap as before) and the next command then recomputed the data
   instead of only rebuilding the page (harmless: the output was byte-identical, which also confirms determinism); the page first stayed
   empty because Python wrote horizon keys as "1.0"/"3.0" while the page looked up "1"/"3"; labels overlapped in the first render. All fixed.
+
+## 12. The live eMap feed and the "yellow" alert level (2026-10-10)
+Question from the user: what does alert_level "yellow" in vadimklimenko.com/map/statuses.json mean, is it in our data, and does the feed agree
+with our volunteer source? Everything new is in demo/; src/ and scripts/ are untouched (frozen).
+- The feed (checked with one request, then the logger): {"version": 10, "states": {oblast: {enabled, enabled_at, disabled_at, alert_level,
+  districts: {raion: {...}}}}}, 27 states, 126 raions. Enabled raions have alert_level "red" or "yellow" and an exact enabled_at; disabled
+  entries carry no timestamps at all. Luhansk oblast is enabled with "red" since 2022-04-04 16:45 UTC, Crimea and Sevastopol since 2022-12-10
+  22:22 UTC: exactly the two permanent sirens described in the dataset README, so the feed and the dataset share their origin.
+- Meaning of yellow, from sources, not from memory:
+  - the map's own code ranks red 3 > orange 2 > yellow 1, shows a yellow raion as alarmed, and its legend says only "Жовтий рівень тривоги";
+  - TSN, 2026-09-02 (tsn.ua/ukrayina/povitriana-tryvoha-v-ukrayini-zminytsia-shcho-oznachatymut-zovtyy-i-chervonyy-rivni-zahrozy-3160946.html):
+    the President announced two levels, yellow = a drone (UAV) raid, red = missile / ballistic threats and massed attacks, with different sirens;
+  - texty.org.ua, 2025-12-15: raion-level alerting since December 2025; it does not mention levels.
+  So yellow exists only since about September 2026, which is INSIDE our test block (2026-08-14..10-09). When it actually started in the
+  data is not known (the announcement says "will mean").
+- In our data: no alert level anywhere. The volunteer file has region, started_at, finished_at, naive; the official file's "level" column is the
+  geographic level (oblast / raion / hromada), not a colour. Neither CSV contains "yellow"/"red". The dataset's processors (pinned snapshot) know no
+  levels either. Two traps found in that code: in the official Telegram channel the emoji 🟡 has meant a PARTIAL all-clear ("відбій в області,
+  тривога ще триває у якомусь районі"), not the new level; and the official parser counts a start only if the first line has "Повітряна" or 🔴.
+  The volunteer parser counts any message with "тривога", "загроза", "небезпека", "сирена" ... as an alert, so drone (yellow) alerts are most
+  likely included as ordinary alerts there, but without the messages this is unproven.
+- Consequence for the project, a hypothesis only: from September 2026 the target "an alert starts" may mix drone and missile alerts in a new way,
+  a possible regime change inside the test block. Not testable with the data we have; noted as a limitation.
+- Agreement with the volunteer source can only be checked on a common period, i.e. after 2026-10-09, which is the pre-registered holdout
+  (decision 9). To keep that clean, the comparison is done only after the Monday holdout run. The analysis code is frozen anyway, so nothing
+  seen in the live feed can change it.
+- demo/emap_logger.py: one request per minute at most (a smaller interval is refused), conditional requests (ETag / Last-Modified), an identifying
+  User-Agent, doubling pause after errors (up to 10 min). Writes demo/emap_log/ (not committed): events.jsonl (start / end / level change, with the
+  poll times around it; an end is only known to lie between two polls), polls.csv, and a full snapshot at start. Tested without network
+  (demo/test_emap_logger.py, 5 tests) and with 3 live polls (exactly 60 s apart). Started in the user's terminal on 2026-10-10 ~12:28 UTC;
+  it runs only while that terminal (and the computer) runs.
+- Planned after the holdout: aggregate the logged raion events to oblasts (an oblast is "under alert" if any raion is, and separately red only)
+  and match them with the new volunteer snapshot for the logged period: which volunteer starts coincide with red and which with yellow raion starts.

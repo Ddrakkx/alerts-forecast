@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 data/holdout/
 demo/data.js
+demo/emap_log/
