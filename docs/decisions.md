@@ -377,3 +377,8 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
 - Bug fixed before any forecast existed: the report decided whether an answer window had passed by the time of the last log EVENT, but quiet minutes
   write no event, so a window without any alert would have stayed "unknown". It now uses the last successful poll in polls.csv (tested).
   The running forecaster did not need a restart: forecasting code was unchanged, the report runs as a separate command.
+- 2026-10-10 ~14:48-16:4x UTC the computer was switched off: no polls, no forecasts. First live forecast before that: all-clear at 14:12:29 UTC,
+  written 13 s later (counted). Change after it (metadata only, the forecasting code is unchanged): the history status of a forecast now lists every gap
+  in the log within the last 7 days (stretches of more than 5 minutes without a successful poll), not only the gap before the logger started.
+  An alert that started and ended inside a gap is missing from the history; one that ended inside a gap gets the restart time as its end.
+  Restart order: the logger first, the forecaster after its first poll, so the artificial "all-clear" at the logger's restart can never be forecast.

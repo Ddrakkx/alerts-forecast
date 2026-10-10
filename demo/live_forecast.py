@@ -174,9 +174,29 @@ def forecast(t: pd.Timestamp, history: dict, models: dict) -> dict:
     return {"forecasts": out, "known_at_t": known}
 
 
-def history_status(t: pd.Timestamp) -> dict:
-    return {"gap": "no data 2026-10-09 05:12:41 .. 2026-10-10 12:25:09 UTC",
-            "complete_24h": bool(t >= LOGGER_START + pd.Timedelta(hours=24)), "complete_7d": bool(t >= LOGGER_START + pd.Timedelta(days=7))}
+SNAPSHOT_END = pd.Timestamp("2026-10-09 05:12:41", tz="UTC")
+GAP_MIN = pd.Timedelta(minutes=5)
+
+
+def log_gaps(polls_csv: Path) -> list:
+    """Periods without data: before the logger started, and every stretch of more than 5 minutes between successful polls
+    (for example while the computer was off). Alerts that started and ended inside a gap are missing from the history."""
+    gaps = [(SNAPSHOT_END, LOGGER_START)]
+    prev = None
+    for line in polls_csv.read_text(encoding="utf-8").splitlines()[1:]:
+        parts = line.split(",")
+        if len(parts) > 1 and parts[1] in ("200", "304"):
+            t = ts(parts[0])
+            if prev is not None and t - prev > GAP_MIN:
+                gaps.append((prev, t))
+            prev = t
+    return gaps
+
+
+def history_status(t: pd.Timestamp, gaps: list) -> dict:
+    hit = lambda w: [g for g in gaps if g[1] > t - w and g[0] < t]  # noqa: E731
+    return {"gaps_last_7d": [f"{a:%Y-%m-%d %H:%M} .. {b:%Y-%m-%d %H:%M} UTC" for a, b in hit(pd.Timedelta(days=7))],
+            "complete_24h": not hit(pd.Timedelta(hours=24)), "complete_7d": not hit(pd.Timedelta(days=7))}
 
 
 # ---------------------------------------------------------------- answers from the eMap log
@@ -252,7 +272,7 @@ def watch() -> None:
                 for t in sorted(new):
                     made = pd.Timestamp.now(tz="UTC")
                     rec = {"t": t.isoformat(), "made_at": made.isoformat(timespec="seconds"), "lag_s": round((made - t).total_seconds()),
-                           "counted": bool(made - t <= MAX_LAG), "history": history_status(t), **forecast(t, history, models)}
+                           "counted": bool(made - t <= MAX_LAG), "history": history_status(t, log_gaps(LOG / "polls.csv")), **forecast(t, history, models)}
                     with open(OUT / "forecasts.jsonl", "a", encoding="utf-8") as fh:
                         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     done.add(t.isoformat())

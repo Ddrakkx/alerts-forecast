@@ -62,3 +62,15 @@ def test_last_successful_poll_ignores_errors_and_is_not_the_last_event(tmp_path)
     p.write_text("polled_at,status\n2026-10-10T12:51:29+00:00,200\n2026-10-10T12:52:29+00:00,304\n"
                  "2026-10-10T12:53:29+00:00,error: OSError\n", encoding="utf-8")
     assert LF.last_successful_poll(p) == pd.Timestamp("2026-10-10 12:52:29", tz="UTC")
+
+
+def test_gaps_in_the_log_mark_the_history_incomplete(tmp_path):
+    p = tmp_path / "polls.csv"
+    p.write_text("polled_at,status\n2026-10-10T14:47:29+00:00,200\n2026-10-10T14:48:29+00:00,200\n"
+                 "2026-10-10T16:45:00+00:00,200\n2026-10-10T16:46:00+00:00,304\n", encoding="utf-8")
+    gaps = LF.log_gaps(p)
+    assert gaps[0] == (LF.SNAPSHOT_END, LF.LOGGER_START)
+    assert gaps[1] == (pd.Timestamp("2026-10-10 14:48:29", tz="UTC"), pd.Timestamp("2026-10-10 16:45", tz="UTC"))
+    st = LF.history_status(pd.Timestamp("2026-10-12 12:00", tz="UTC"), gaps)  # 24 h after the switch-off gap: complete again
+    assert st["complete_24h"] is True and st["complete_7d"] is False and len(st["gaps_last_7d"]) == 2
+    assert LF.history_status(pd.Timestamp("2026-10-10 17:00", tz="UTC"), gaps)["complete_24h"] is False
