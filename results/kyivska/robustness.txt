@@ -1,46 +1,46 @@
-region Kyivska oblast
+region Kyivska oblast | bootstrap blocks: week
 ===== A. Evaluation subsets (volunteer, full period) =====
 
-[volunteer] H=3: test 2026-08-14..2026-10-09, bar B = recent_activity (|90d), logreg chosen = C=0.001|90d
-  all rows                           rows= 4727 pos=73.9% | recent_activity PR-AUC 0.830, Brier 0.2243
-      logreg[own+nbr+cty]      PR-AUC 0.864  diff 0.034 [0.010, 0.062] | Brier 0.1755  diff -0.0488 [-0.0637, -0.0348]
-      logreg[own+nbr+cty]+platt PR-AUC 0.862  diff 0.032 [0.010, 0.059] | Brier 0.1697  diff -0.0546 [-0.0694, -0.0396]
-  without naive-affected moments     rows= 4643 pos=74.5% | recent_activity PR-AUC 0.833, Brier 0.2239
-      logreg[own+nbr+cty]      PR-AUC 0.865  diff 0.032 [0.008, 0.059] | Brier 0.1748  diff -0.0491 [-0.0639, -0.0348]
-      logreg[own+nbr+cty]+platt PR-AUC 0.863  diff 0.030 [0.007, 0.056] | Brier 0.1691  diff -0.0548 [-0.0696, -0.0397]
-  without the last 24 h              rows= 4649 pos=73.8% | recent_activity PR-AUC 0.834, Brier 0.2246
-      logreg[own+nbr+cty]      PR-AUC 0.865  diff 0.031 [0.003, 0.060] | Brier 0.1758  diff -0.0488 [-0.0625, -0.0330]
-      logreg[own+nbr+cty]+platt PR-AUC 0.863  diff 0.029 [0.003, 0.056] | Brier 0.1699  diff -0.0547 [-0.0691, -0.0392]
+[volunteer] H=3: test 2026-08-14..2026-10-09, protocol model logreg[own+nbr] (C=0.001|90d), bar B recent_activity, strict recent_level||3d / recent_level||3d
+  all rows                         rows= 4727 pos=73.9% | model PR-AUC 0.863, Brier 0.1753
+      vs bar B recent_activity      dPR +0.033 [+0.013, +0.059] | dBrier -0.0490 [-0.0693, -0.0257]
+      vs strict (per metric)          dPR +0.001 [-0.013, +0.012] | dBrier +0.0053 [-0.0071, +0.0173]
+  without naive-affected moments   rows= 4643 pos=74.5% | model PR-AUC 0.864, Brier 0.1746
+      vs bar B recent_activity      dPR +0.031 [+0.011, +0.055] | dBrier -0.0493 [-0.0701, -0.0253]
+      vs strict (per metric)          dPR +0.001 [-0.013, +0.011] | dBrier +0.0052 [-0.0072, +0.0171]
+  without the last 24 h            rows= 4649 pos=73.8% | model PR-AUC 0.864, Brier 0.1756
+      vs bar B recent_activity      dPR +0.030 [+0.010, +0.056] | dBrier -0.0491 [-0.0701, -0.0251]
+      vs strict (per metric)          dPR +0.001 [-0.012, +0.012] | dBrier +0.0054 [-0.0072, +0.0176]
 
-[volunteer] H=1: test 2026-08-14..2026-10-09, bar B = recent_activity (|90d), logreg chosen = C=0.001|180d
-  all rows                           rows= 4735 pos=40.1% | recent_activity PR-AUC 0.476, Brier 0.2639
-      logreg[own+nbr+cty]      PR-AUC 0.572  diff 0.096 [0.055, 0.147] | Brier 0.2184  diff -0.0455 [-0.0594, -0.0337]
-      logreg[own+nbr+cty]+platt PR-AUC 0.561  diff 0.086 [0.048, 0.132] | Brier 0.2180  diff -0.0459 [-0.0598, -0.0324]
-  without naive-affected moments     rows= 4651 pos=40.6% | recent_activity PR-AUC 0.478, Brier 0.2663
-      logreg[own+nbr+cty]      PR-AUC 0.573  diff 0.095 [0.054, 0.145] | Brier 0.2201  diff -0.0462 [-0.0601, -0.0342]
-      logreg[own+nbr+cty]+platt PR-AUC 0.562  diff 0.084 [0.047, 0.130] | Brier 0.2198  diff -0.0466 [-0.0608, -0.0330]
-  without the last 24 h              rows= 4656 pos=40.2% | recent_activity PR-AUC 0.483, Brier 0.2645
-      logreg[own+nbr+cty]      PR-AUC 0.574  diff 0.092 [0.051, 0.135] | Brier 0.2183  diff -0.0462 [-0.0592, -0.0325]
-      logreg[own+nbr+cty]+platt PR-AUC 0.564  diff 0.081 [0.043, 0.125] | Brier 0.2178  diff -0.0468 [-0.0603, -0.0327]
+[volunteer] H=1: test 2026-08-14..2026-10-09, protocol model logreg[own+nbr] (C=0.001|90d), bar B recent_activity, strict recent_level||3d / recent_level||3d
+  all rows                         rows= 4735 pos=40.1% | model PR-AUC 0.563, Brier 0.2225
+      vs bar B recent_activity      dPR +0.087 [+0.045, +0.143] | dBrier -0.0413 [-0.0596, -0.0250]
+      vs strict (per metric)          dPR +0.060 [+0.029, +0.092] | dBrier -0.0058 [-0.0129, +0.0016]
+  without naive-affected moments   rows= 4651 pos=40.6% | model PR-AUC 0.565, Brier 0.2243
+      vs bar B recent_activity      dPR +0.087 [+0.044, +0.143] | dBrier -0.0420 [-0.0606, -0.0254]
+      vs strict (per metric)          dPR +0.061 [+0.030, +0.095] | dBrier -0.0058 [-0.0126, +0.0013]
+  without the last 24 h            rows= 4656 pos=40.2% | model PR-AUC 0.566, Brier 0.2226
+      vs bar B recent_activity      dPR +0.083 [+0.037, +0.142] | dBrier -0.0419 [-0.0605, -0.0257]
+      vs strict (per metric)          dPR +0.060 [+0.029, +0.092] | dBrier -0.0053 [-0.0123, +0.0022]
 
 ===== B. Volunteer vs official source, identical protocol, data end 2026-08-29 =====
 
-[volunteer] H=3: test 2026-07-04..2026-08-29, bar B = recent_activity (|180d), logreg chosen = C=0.001|180d
-  all rows                           rows= 4945 pos=43.8% | recent_activity PR-AUC 0.479, Brier 0.2499
-      logreg[own+nbr+cty]      PR-AUC 0.556  diff 0.078 [0.013, 0.121] | Brier 0.2382  diff -0.0117 [-0.0231, -0.0002]
-      logreg[own+nbr+cty]+platt PR-AUC 0.554  diff 0.076 [0.017, 0.114] | Brier 0.2384  diff -0.0115 [-0.0237, -0.0006]
+[volunteer] H=3: test 2026-07-04..2026-08-29, protocol model logreg[own+nbr] (C=0.001|180d), bar B recent_activity, strict recent_activity||90d / recent_activity||all
+  all rows                         rows= 4945 pos=43.8% | model PR-AUC 0.555, Brier 0.2387
+      vs bar B recent_activity      dPR +0.076 [+0.047, +0.111] | dBrier -0.0112 [-0.0213, -0.0044]
+      vs strict (per metric)          dPR +0.045 [+0.017, +0.068] | dBrier -0.0076 [-0.0136, -0.0018]
 
-[official] H=3: test 2026-07-04..2026-08-29, bar B = recent_activity (|180d), logreg chosen = C=0.001|180d
-  all rows                           rows= 4400 pos=39.2% | recent_activity PR-AUC 0.414, Brier 0.2414
-      logreg[own+nbr+cty]      PR-AUC 0.461  diff 0.047 [-0.000, 0.085] | Brier 0.2394  diff -0.0020 [-0.0103, 0.0062]
-      logreg[own+nbr+cty]+platt PR-AUC 0.449  diff 0.035 [-0.021, 0.078] | Brier 0.2393  diff -0.0021 [-0.0107, 0.0064]
+[official] H=3: test 2026-07-04..2026-08-29, protocol model logreg[own+nbr] (C=0.001|180d), bar B recent_activity, strict hour_of_week_smooth|k=100|90d / recent_activity||all
+  all rows                         rows= 4400 pos=39.2% | model PR-AUC 0.467, Brier 0.2390
+      vs bar B recent_activity      dPR +0.053 [+0.021, +0.081] | dBrier -0.0024 [-0.0109, +0.0039]
+      vs strict (per metric)          dPR +0.021 [-0.016, +0.061] | dBrier +0.0004 [-0.0106, +0.0092]
 
-[volunteer] H=1: test 2026-07-04..2026-08-29, bar B = recent_level (|14d), logreg chosen = C=0.003|180d
-  all rows                           rows= 4952 pos=19.2% | recent_level PR-AUC 0.193, Brier 0.1555
-      logreg[own+nbr+cty]      PR-AUC 0.317  diff 0.124 [0.077, 0.164] | Brier 0.1481  diff -0.0074 [-0.0134, -0.0023]
-      logreg[own+nbr+cty]+platt PR-AUC 0.319  diff 0.125 [0.075, 0.168] | Brier 0.1479  diff -0.0076 [-0.0134, -0.0031]
+[volunteer] H=1: test 2026-07-04..2026-08-29, protocol model logreg[own+nbr] (C=0.003|180d), bar B recent_level, strict recent_activity||90d / recent_activity||all
+  all rows                         rows= 4952 pos=19.2% | model PR-AUC 0.315, Brier 0.1484
+      vs bar B recent_level         dPR +0.121 [+0.065, +0.164] | dBrier -0.0072 [-0.0130, -0.0022]
+      vs strict (per metric)          dPR +0.057 [+0.033, +0.086] | dBrier -0.0055 [-0.0108, -0.0011]
 
-[official] H=1: test 2026-07-04..2026-08-29, bar B = recent_level (|14d), logreg chosen = C=0.01|365d
-  all rows                           rows= 4405 pos=17.0% | recent_level PR-AUC 0.162, Brier 0.1416
-      logreg[own+nbr+cty]      PR-AUC 0.255  diff 0.094 [0.044, 0.162] | Brier 0.1387  diff -0.0029 [-0.0082, 0.0006]
-      logreg[own+nbr+cty]+platt PR-AUC 0.263  diff 0.101 [0.040, 0.181] | Brier 0.1384  diff -0.0032 [-0.0068, -0.0009]
+[official] H=1: test 2026-07-04..2026-08-29, protocol model logreg[own+nbr] (C=0.1|365d), bar B recent_level, strict recent_activity||90d / recent_activity||all
+  all rows                         rows= 4405 pos=17.0% | model PR-AUC 0.259, Brier 0.1383
+      vs bar B recent_level         dPR +0.098 [+0.032, +0.185] | dBrier -0.0033 [-0.0100, +0.0012]
+      vs strict (per metric)          dPR +0.021 [-0.009, +0.075] | dBrier -0.0010 [-0.0051, +0.0024]

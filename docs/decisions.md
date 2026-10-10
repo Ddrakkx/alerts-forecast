@@ -281,3 +281,17 @@ A second agent reviewed the repository. I re-computed its main claims with my ow
 - Not done on purpose: giving the models a 3-day rate feature or daily refits. It would be another change after seeing the test; listed as an extension.
 - The holdout runner (scripts/run_holdout.py) and the new-snapshot download (scripts/download_data.py --new-snapshot) were written and dry-run on already seen data
   before any new data exists. One bug found in the dry run's code before freezing: the verdict text called a positive Brier difference "better"; fixed and tested.
+
+### Results after the fixes of decision 10 (results/<oblast>/, results/summary.md; protocol models, week blocks, purge, strict = best baseline configuration)
+- Poltavska: against the strict reference nothing at any horizon, for either model (e.g. 3 h logistic PR-AUC -0.045 [-0.079, +0.025]; with week blocks the
+  review's "significantly worse", found with day blocks, is no longer significant). Against the no-hindsight reference: small ranking gains at 15 min
+  (logistic and boosting PR-AUC +0.021) and for boosting at 30 min (+0.042) and 1 h (+0.035); none at 3 h. The verdict depends on the reference; the README says so.
+- Kyivska against the strict reference: PR-AUC gains at 15 min, 30 min, 1 h (+0.052, +0.069, +0.060), Brier gains at 15 and 30 min; nothing at 3 h.
+  At 1 h and 3 h it repeats on the earlier period 2026-07-04..08-28 (1 h: PR-AUC +0.057, Brier -0.0055; 3 h: +0.045, -0.0076); on the official source same direction, not significant.
+- Kharkivska against the strict reference: both metrics at 15 and 30 min for both models; Brier at 1 h; earlier period at 1 h: PR-AUC +0.062, Brier -0.0101.
+- Lvivska: only a tiny PR-AUC gain at 15 min (+0.010); nothing else. With week blocks the earlier "neighbours make Lviv's Brier worse" is no longer significant.
+- Neighbours and country (same model with vs without): Kyivska yes at every horizon up to 3 h; Kharkivska mostly in Brier; Poltavska only for boosting (30 min, 1 h);
+  Lvivska no.
+- Three statements in my first draft of the new README were not backed by the data and were fixed before the commit: the subset checks were claimed for the
+  short horizons (they were run at 1 h and 3 h only), the official source was said to agree for Kharkiv (it is unusable there and points the other way), and
+  "every Lviv gain disappeared" (one tiny gain remains).
