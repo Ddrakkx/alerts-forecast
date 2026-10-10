@@ -160,6 +160,10 @@ baselines, features, models, robustness. The decision log records, for each step
 corrected (for example: the first end-of-data choice, the first estimate of the hole in the official file, a bug on empty histories found by the truncation
 test, tests that passed by accident, and the withdrawn H=3 result). The full dialogue is submitted separately.
 
+## License
+
+Code: MIT (see `LICENSE`). The data keeps the license of its source repository (MIT) and is not redistributed here.
+
 ## Possible extensions
 
 - More oblasts (Kyiv, others) with the same pipeline; the region is a single constant today.
