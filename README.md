@@ -249,6 +249,7 @@ Results are deterministic (fixed seeds). The outputs of the runs used in this RE
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
 | `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, the review and the holdout pre-registration |
 | `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
+| `analysis/weekend_check.py` | side check of the claim "fewer alerts at weekends" (`results/weekend_check.txt`; frozen code imported read-only) |
 | `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only); live eMap logger (`emap_logger.py`) |
 
 ## License

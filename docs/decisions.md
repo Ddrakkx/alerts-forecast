@@ -412,3 +412,13 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
       the eMap union was on almost the whole logged time);
   (3) Lviv: the volunteer series has many alerts the official feed lacks (README data warning), so eMap "yes" answers will be rare.
 - No other trigger (red only, without front-line raions, ...) is tried now: picking one after looking at the live log would be a post-hoc choice.
+
+## Side check (2026-10-11): "there are fewer alerts at weekends than on weekdays"
+- Claim from the user, checked on the volunteer snapshot only (to 2026-10-09; the live log has one weekend). Code: analysis/weekend_check.py,
+  output results/weekend_check.txt. Kyiv calendar days; weekend vs weekdays compared within each Mon-Sun week (intensity changes by month),
+  95% bootstrap over weeks. Measures: starts per day, hours under alert per day, the 3 h onset share of quiet moments.
+- Result: partly true, and small. Whole war: about 7% fewer alert starts at weekends in the country (ratio 0.93 [0.89, 0.96]), Lviv -19%,
+  Poltava and Kharkiv -6..7%; hours under alert show no clear difference (country 0.96 [0.91, 1.01]). The effect is clear in 2023 (-16%) and
+  2024 (-10%) but not in 2025 or 2026; over the last 52 weeks only Kharkiv starts are clearly lower (-7%), and the 3 h target shows no
+  difference in any of the four oblasts. About 45 cells were looked at, so a single "lower" cell can be chance.
+- Nothing in the models changes: they already have an is_weekend feature, and the hour-of-week baselines include the day of week.

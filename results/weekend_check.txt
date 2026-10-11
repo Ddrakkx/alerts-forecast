@@ -1,0 +1,74 @@
+Volunteer snapshot, data end 2026-10-09 05:12:41+00:00; complete Mon-Sun weeks 2022-02-28 .. 2026-10-04 (Kyiv days).
+Ratio = weekend daily mean / weekday daily mean, both taken within the same weeks; 95% bootstrap over weeks (2000 draws, seed 0). Ratio < 1: less at weekends.
+
+== starts per day ==
+ all (2022-02-28..)
+  country (sum)        weekday   69.82 starts/day, weekend   64.67 starts/day, ratio 0.93 [0.89, 0.96]  quieter weekend in 63% of 240 weeks  -> weekend LOWER
+  Poltavska oblast     weekday    3.96 starts/day, weekend    3.67 starts/day, ratio 0.93 [0.88, 0.98]  quieter weekend in 53% of 240 weeks  -> weekend LOWER
+  Kyivska oblast       weekday    2.65 starts/day, weekend    2.48 starts/day, ratio 0.93 [0.86, 1.01]  quieter weekend in 56% of 240 weeks  -> no clear difference
+  Kharkivska oblast    weekday    7.78 starts/day, weekend    7.34 starts/day, ratio 0.94 [0.91, 0.98]  quieter weekend in 61% of 240 weeks  -> weekend LOWER
+  Lvivska oblast       weekday    1.10 starts/day, weekend    0.89 starts/day, ratio 0.81 [0.69, 0.92]  quieter weekend in 64% of 240 weeks  -> weekend LOWER
+ last 52 weeks
+  country (sum)        weekday  104.50 starts/day, weekend  100.18 starts/day, ratio 0.96 [0.90, 1.03]  quieter weekend in 60% of 52 weeks  -> no clear difference
+  Poltavska oblast     weekday    5.92 starts/day, weekend    5.47 starts/day, ratio 0.92 [0.82, 1.03]  quieter weekend in 56% of 52 weeks  -> no clear difference
+  Kyivska oblast       weekday    4.49 starts/day, weekend    4.58 starts/day, ratio 1.02 [0.89, 1.18]  quieter weekend in 54% of 52 weeks  -> no clear difference
+  Kharkivska oblast    weekday   14.24 starts/day, weekend   13.29 starts/day, ratio 0.93 [0.88, 0.99]  quieter weekend in 63% of 52 weeks  -> weekend LOWER
+  Lvivska oblast       weekday    2.67 starts/day, weekend    2.42 starts/day, ratio 0.91 [0.72, 1.11]  quieter weekend in 62% of 52 weeks  -> no clear difference
+ last 8 weeks (test block)
+  country (sum)        weekday  143.52 starts/day, weekend  137.06 starts/day, ratio 0.95 [0.84, 1.08]  quieter weekend in 50% of 8 weeks  -> no clear difference
+  Poltavska oblast     weekday    6.95 starts/day, weekend    6.75 starts/day, ratio 0.97 [0.75, 1.24]  quieter weekend in 50% of 8 weeks  -> no clear difference
+  Kyivska oblast       weekday   10.45 starts/day, weekend    9.81 starts/day, ratio 0.94 [0.67, 1.24]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Kharkivska oblast    weekday   18.38 starts/day, weekend   17.38 starts/day, ratio 0.95 [0.86, 1.04]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Lvivska oblast       weekday    4.70 starts/day, weekend    4.25 starts/day, ratio 0.90 [0.63, 1.19]  quieter weekend in 62% of 8 weeks  -> no clear difference
+
+== hours per day ==
+ all (2022-02-28..)
+  country (sum)        weekday   55.34 h/day, weekend   52.99 h/day, ratio 0.96 [0.91, 1.01]  quieter weekend in 58% of 240 weeks  -> no clear difference
+  Poltavska oblast     weekday    3.14 h/day, weekend    2.97 h/day, ratio 0.94 [0.88, 1.01]  quieter weekend in 58% of 240 weeks  -> no clear difference
+  Kyivska oblast       weekday    1.97 h/day, weekend    1.87 h/day, ratio 0.95 [0.86, 1.03]  quieter weekend in 56% of 240 weeks  -> no clear difference
+  Kharkivska oblast    weekday    4.45 h/day, weekend    4.16 h/day, ratio 0.94 [0.89, 0.98]  quieter weekend in 60% of 240 weeks  -> weekend LOWER
+  Lvivska oblast       weekday    0.90 h/day, weekend    0.85 h/day, ratio 0.95 [0.76, 1.16]  quieter weekend in 62% of 240 weeks  -> no clear difference
+ last 52 weeks
+  country (sum)        weekday   60.22 h/day, weekend   62.66 h/day, ratio 1.04 [0.95, 1.14]  quieter weekend in 56% of 52 weeks  -> no clear difference
+  Poltavska oblast     weekday    3.62 h/day, weekend    3.54 h/day, ratio 0.98 [0.86, 1.11]  quieter weekend in 52% of 52 weeks  -> no clear difference
+  Kyivska oblast       weekday    1.97 h/day, weekend    1.92 h/day, ratio 0.97 [0.81, 1.15]  quieter weekend in 50% of 52 weeks  -> no clear difference
+  Kharkivska oblast    weekday    5.24 h/day, weekend    4.97 h/day, ratio 0.95 [0.89, 1.02]  quieter weekend in 65% of 52 weeks  -> no clear difference
+  Lvivska oblast       weekday    1.89 h/day, weekend    2.19 h/day, ratio 1.16 [0.80, 1.57]  quieter weekend in 48% of 52 weeks  -> no clear difference
+ last 8 weeks (test block)
+  country (sum)        weekday   66.95 h/day, weekend   71.05 h/day, ratio 1.06 [0.87, 1.30]  quieter weekend in 38% of 8 weeks  -> no clear difference
+  Poltavska oblast     weekday    3.89 h/day, weekend    4.21 h/day, ratio 1.08 [0.82, 1.43]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Kyivska oblast       weekday    2.88 h/day, weekend    2.54 h/day, ratio 0.88 [0.66, 1.11]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Kharkivska oblast    weekday    5.49 h/day, weekend    5.41 h/day, ratio 0.99 [0.80, 1.21]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Lvivska oblast       weekday    2.47 h/day, weekend    2.53 h/day, ratio 1.02 [0.67, 1.48]  quieter weekend in 50% of 8 weeks  -> no clear difference
+
+== country starts per day, by year (stability of the effect) ==
+  2022                 weekday   49.70 starts/day, weekend   47.90 starts/day, ratio 0.96 [0.87, 1.08]  quieter weekend in 57% of 44 weeks  -> no clear difference
+  2023                 weekday   54.71 starts/day, weekend   45.95 starts/day, ratio 0.84 [0.77, 0.91]  quieter weekend in 73% of 52 weeks  -> weekend LOWER
+  2024                 weekday   71.14 starts/day, weekend   64.10 starts/day, ratio 0.90 [0.84, 0.96]  quieter weekend in 67% of 52 weeks  -> weekend LOWER
+  2025                 weekday   67.86 starts/day, weekend   66.48 starts/day, ratio 0.98 [0.91, 1.05]  quieter weekend in 56% of 52 weeks  -> no clear difference
+  2026                 weekday  112.48 starts/day, weekend  105.67 starts/day, ratio 0.94 [0.87, 1.01]  quieter weekend in 60% of 40 weeks  -> no clear difference
+
+== starts by day of week, last 52 weeks (index: 1.00 = the mean day of the same weeks) ==
+                          Mon    Tue    Wed    Thu    Fri    Sat    Sun
+  country (sum)          0.97   1.03   1.00   1.03   1.02   0.98   0.96
+  Poltavska oblast       1.03   1.04   1.00   1.02   1.02   0.99   0.90
+  Kyivska oblast         0.94   1.01   0.89   1.03   1.10   1.07   0.95
+  Kharkivska oblast      1.01   1.00   0.99   1.07   1.03   0.92   0.98
+  Lvivska oblast         0.84   1.04   1.19   1.06   1.00   0.96   0.90
+
+== main target: share of quiet moments followed by an alert within 3 h ==
+ all (2022-02-28..)
+  Poltavska oblast     weekday    0.43 share, weekend    0.40 share, ratio 0.93 [0.89, 0.98]  quieter weekend in 58% of 240 weeks  -> weekend LOWER
+  Kyivska oblast       weekday    0.28 share, weekend    0.27 share, ratio 0.94 [0.88, 1.01]  quieter weekend in 59% of 240 weeks  -> no clear difference
+  Kharkivska oblast    weekday    0.67 share, weekend    0.65 share, ratio 0.97 [0.95, 0.99]  quieter weekend in 56% of 240 weeks  -> weekend LOWER
+  Lvivska oblast       weekday    0.13 share, weekend    0.10 share, ratio 0.82 [0.72, 0.93]  quieter weekend in 62% of 240 weeks  -> weekend LOWER
+ last 52 weeks
+  Poltavska oblast     weekday    0.58 share, weekend    0.55 share, ratio 0.95 [0.86, 1.05]  quieter weekend in 60% of 52 weeks  -> no clear difference
+  Kyivska oblast       weekday    0.40 share, weekend    0.41 share, ratio 1.02 [0.91, 1.16]  quieter weekend in 52% of 52 weeks  -> no clear difference
+  Kharkivska oblast    weekday    0.88 share, weekend    0.88 share, ratio 1.00 [0.97, 1.02]  quieter weekend in 50% of 52 weeks  -> no clear difference
+  Lvivska oblast       weekday    0.29 share, weekend    0.26 share, ratio 0.91 [0.74, 1.11]  quieter weekend in 58% of 52 weeks  -> no clear difference
+ last 8 weeks (test block)
+  Poltavska oblast     weekday    0.67 share, weekend    0.69 share, ratio 1.03 [0.88, 1.24]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Kyivska oblast       weekday    0.74 share, weekend    0.69 share, ratio 0.93 [0.73, 1.11]  quieter weekend in 62% of 8 weeks  -> no clear difference
+  Kharkivska oblast    weekday    0.93 share, weekend    0.94 share, ratio 1.01 [0.98, 1.04]  quieter weekend in 25% of 8 weeks  -> no clear difference
+  Lvivska oblast       weekday    0.47 share, weekend    0.42 share, ratio 0.90 [0.62, 1.20]  quieter weekend in 62% of 8 weeks  -> no clear difference
