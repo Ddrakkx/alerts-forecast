@@ -1,0 +1,12 @@
+Kyivska oblast: report at 2026-10-11T11:30:33+00:00, last log poll 2026-10-11 11:29:57+00:00
+
+15 min  emap_any: n=3, alerts=0, Brier model 0.0196, baseline 0.0167, model closer in 0 of 3
+15 min  emap_red: n=3, alerts=0, Brier model 0.0196, baseline 0.0167, model closer in 0 of 3
+30 min  emap_any: n=2, alerts=1, Brier model 0.2794, baseline 0.3079, model closer in 1 of 2
+30 min  emap_red: n=2, alerts=1, Brier model 0.2794, baseline 0.3079, model closer in 1 of 2
+1 h     emap_any: n=2, alerts=2, Brier model 0.2647, baseline 0.2913, model closer in 2 of 2
+1 h     emap_red: n=2, alerts=1, Brier model 0.2296, baseline 0.2516, model closer in 1 of 2
+3 h     emap_any: n=2, alerts=2, Brier model 0.1107, baseline 0.0158, model closer in 0 of 2
+3 h     emap_red: n=1, alerts=1, Brier model 0.0719, baseline 0.0158, model closer in 0 of 1
+
+Illustration only (decision 14): too few events for any significance. Primary answers (volunteer data) come later.

@@ -1,12 +1,12 @@
-Poltavska oblast: report at 2026-10-11T09:05:35+00:00, last log poll 2026-10-11 09:04:57+00:00
+Poltavska oblast: report at 2026-10-11T11:30:32+00:00, last log poll 2026-10-11 11:29:57+00:00
 
-15 min  emap_any: n=3, alerts=0, Brier model 0.0018, baseline 0.0013, model closer in 1 of 3
-15 min  emap_red: n=3, alerts=0, Brier model 0.0018, baseline 0.0013, model closer in 1 of 3
-30 min  emap_any: n=3, alerts=0, Brier model 0.0074, baseline 0.0252, model closer in 3 of 3
-30 min  emap_red: n=3, alerts=0, Brier model 0.0074, baseline 0.0252, model closer in 3 of 3
-1 h     emap_any: n=2, alerts=1, Brier model 0.3299, baseline 0.2867, model closer in 1 of 2
-1 h     emap_red: n=2, alerts=0, Brier model 0.0751, baseline 0.0951, model closer in 2 of 2
-3 h     emap_any: n=3, alerts=3, Brier model 0.2125, baseline 0.1099, model closer in 0 of 3
-3 h     emap_red: n=1, alerts=0, Brier model 0.4404, baseline 0.4469, model closer in 1 of 1
+15 min  emap_any: n=6, alerts=0, Brier model 0.0023, baseline 0.0013, model closer in 1 of 6
+15 min  emap_red: n=6, alerts=0, Brier model 0.0023, baseline 0.0013, model closer in 1 of 6
+30 min  emap_any: n=5, alerts=0, Brier model 0.0085, baseline 0.0252, model closer in 5 of 5
+30 min  emap_red: n=5, alerts=0, Brier model 0.0085, baseline 0.0252, model closer in 5 of 5
+1 h     emap_any: n=4, alerts=3, Brier model 0.4569, baseline 0.3825, model closer in 1 of 4
+1 h     emap_red: n=4, alerts=1, Brier model 0.2082, baseline 0.1909, model closer in 3 of 4
+3 h     emap_any: n=5, alerts=5, Brier model 0.1890, baseline 0.1099, model closer in 1 of 5
+3 h     emap_red: n=2, alerts=1, Brier model 0.3203, baseline 0.2784, model closer in 1 of 2
 
 Illustration only (decision 13): too few events for any significance. Primary answers (volunteer data) come later.
