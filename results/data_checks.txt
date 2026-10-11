@@ -1,0 +1,17 @@
+volunteer data end 2026-10-09 05:12:41+00:00; test block from 2026-08-14 00:00 UTC; check period 2026-05-01 .. 2026-08-29 (exclusive), UTC
+
+Invented ends (naive), Poltava: whole period 1.9%; test block 21 of 382 (5.5%)
+  Lviv neighbour Rivnenska oblast, test block: naive 27 of 107
+  Lviv neighbour Ternopilska oblast, test block: naive 9 of 21
+  Lviv neighbour Volynska oblast, test block: naive 18 of 216
+
+Volunteer starts outside any official episode of the same oblast (official: deduplicated, raions merged), check period:
+  Poltavska oblast: 6 of 798 (1%); official episodes starting in the period: 745
+  Kyivska oblast: 21 of 542 (4%); official episodes starting in the period: 426
+  Lvivska oblast: 317 of 347 (91%); official episodes starting in the period: 29
+
+Alerts in the test block, western oblasts: Lvivska 245, Volynska 216, Rivnenska 107, Khmelnytska 75, Chernivetska 36, Ternopilska 21, Ivano-Frankivska 8, Zakarpatska 0
+
+Own alert starts in the test block with a neighbour's start shortly before (within m minutes, strictly before):
+  Lvivska oblast: 2 min 2%, 15 min 11%
+  Poltavska oblast: 2 min 15%, 15 min 63%

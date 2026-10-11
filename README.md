@@ -11,9 +11,11 @@ leak-free evaluation, not a big number.
 на жодному горизонті.** Чесне застереження: висновок залежить від того, з чим порівнювати. Проти бейзлайна, обраного на валідації
 (без підглядання в тест), у Полтавській є невеликий виграш у ранжуванні на 15 хв – 1 год (переважно бустинг); проти найкращої конфігурації
 бейзлайну на самому тесті його немає. **Стійкий результат є в Київській (15 хв – 1 год) і Харківській (15–30 хв):** там моделі виграють
-навіть проти найсуворішого еталона, саме там допомагають дані сусідніх областей, а при 1 год це повторюється й на попередньому періоді.
+навіть проти найсуворішого еталона, і саме там допомагають дані сусідніх областей. При 1 год схожий виграш є й на попередньому періоді, але той період
+частково збігається з основними (це не незалежне повторення). Інтервали з 9 тижнів завузькі: за наближеною поправкою частина позначок † зникає (рішення 15).
 **Львівська:** стійкого результату немає, а сам ряд даних під сумнівом. Висновки кілька разів змінювались після перевірок, зокрема після
-незалежної рецензії іншого агента; усе описано в [docs/decisions.md](docs/decisions.md). Тест на справді нових даних заздалегідь зареєстровано (рішення 9).
+двох незалежних рецензій інших агентів; усе описано в [docs/decisions.md](docs/decisions.md). Тест на нових даних заздалегідь зареєстровано (рішення 9)
+і виправлено до завантаження даних (рішення 15); він уже не сліпий і лише описовий (див. нижче).
 
 **Interactive demo:** open [demo/index.html](demo/index.html) in a browser (one self-contained file; download it or clone the repo). It shows one day in Poltava oblast: alerts on a time axis, the forecast moment t, what the model knows before t and what is hidden, the window (t, t+H], and the model's real out-of-sample forecast against the baseline. Built by `python demo/build_demo.py` (decision 11).
 
@@ -27,19 +29,22 @@ Test block = last 8 weeks (2026-08-14 .. 2026-10-09, 57 Kyiv days, about 4,500 f
   **configurations on the test block itself**, separately for each metric. The strict one uses hindsight and is biased towards the baselines
   (a maximum over many candidates); it is a bound, not the truth. A claim below counts only if it holds against the strict reference.
 - **Intervals**: 95%, paired, bootstrap over ISO weeks (9 blocks; coarse, but the alert rate persists for weeks, so day blocks were too narrow).
+  With only 9 blocks (the edge ones 2.9 and 4.3 days) a percentile bootstrap is itself too narrow. An approximate correction (intervals x1.25 =
+  t(8)/z x sqrt(9/8); not a rerun) keeps 19 of the 22 † marks against the strict reference; the 3 it removes are marked ‡ below (decision 15).
 
-What survives the strict reference (logistic protocol model / boosting protocol model; † = interval excludes zero, see `results/summary.md` for every number):
+What survives the strict reference (logistic protocol model / boosting protocol model; † = interval excludes zero, ‡ = excludes zero only before the
+approximate 9-block correction, i.e. fragile; see `results/summary.md` for every number):
 
 | Oblast | 15 min | 30 min | 1 h | 3 h (main) |
 |---|---|---|---|---|
 | **Poltavska** (main) | nothing | nothing | nothing | nothing |
-| Kyivska | PR-AUC † and Brier † / PR-AUC † | PR-AUC † and Brier † / PR-AUC † | PR-AUC † / PR-AUC † | nothing |
-| Kharkivska | PR-AUC † and Brier † / both † | PR-AUC † and Brier † / both † | Brier † / both † | Brier † (tiny) / nothing |
+| Kyivska | PR-AUC † and Brier ‡ / PR-AUC † | PR-AUC † and Brier ‡ / PR-AUC † | PR-AUC † / PR-AUC † | nothing |
+| Kharkivska | PR-AUC ‡ and Brier † / both † | PR-AUC † and Brier † / both † | Brier † / both † | Brier † (tiny) / nothing |
 | Lvivska (data warning) | PR-AUC † (tiny) / nothing | nothing | nothing | nothing |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/diff_pr_auc_dark.png">
-  <img src="docs/figures/diff_pr_auc.png" alt="PR-AUC difference between the protocol logistic model and the best baseline configuration on the test block, with 95% week-block intervals, for Poltava, Kyiv oblast, Kharkiv and Lviv at 15 min, 30 min, 1 h, 3 h and 6 h. Every Poltava interval contains zero; Kyiv is above zero at 15 min to 1 h and Kharkiv at 15 and 30 min.">
+  <img src="docs/figures/diff_pr_auc.png" alt="PR-AUC difference between the protocol logistic model and the best baseline configuration on the test block, with 95% week-block intervals, for Poltava, Kyiv oblast, Kharkiv and Lviv at 15 min, 30 min, 1 h, 3 h and 6 h. Every Poltava interval contains zero; Kyiv is above zero at 15 min to 1 h, Kharkiv at 15 and 30 min, Lviv just above zero at 15 min; at 6 h Kharkiv is below zero (the model is worse).">
 </picture>
 
 <picture>
@@ -53,11 +58,18 @@ What this says, and what it does not:
   there are small ranking gains at short horizons (15 min: logistic and boosting PR-AUC +0.021 †; 30 min and 1 h: boosting +0.042 † and +0.035 †), and none at 3 h.
   So the Poltava verdict depends on the reference; with hindsight a "rate of the last 3 days" baseline is as good as or better than the models.
 - **Kyiv and Kharkiv: real gains at short horizons.** They hold against the strict reference, with the protocol models and with week blocks. The subset checks
-  (without naive-affected moments, without the last 24 h; `results/*/robustness.txt`) were run at 1 h and 3 h and do not change the 1 h results. At 1 h the gains also
-  repeat on the earlier period 2026-07-04..08-28 against the strict reference (Kyiv PR-AUC +0.057 †, Brier -0.0055 †; Kharkiv PR-AUC +0.062 †, Brier -0.0101 †).
+  (without naive-affected moments, without the last 24 h; `results/*/robustness.txt`) were run at 1 h and 3 h only and do not change the 1 h results. At 1 h
+  similar gains appear on the earlier period 2026-07-04..08-28 against the strict reference (Kyiv PR-AUC +0.057 †, Brier -0.0055 †; Kharkiv PR-AUC +0.062 †,
+  Brier -0.0101 †). That period shares 6 weeks with the main validation and 2 with the main test, so it is **not an independent repetition**, and the
+  15 and 30 min horizons were not checked on it (decision 15).
   On the official source Kyiv points the same way without being significant (PR-AUC +0.021 [-0.009, +0.075]); for Kharkiv the official source is not usable.
 - **Lviv: nothing robust**, and the Lviv series itself is questionable (see Data).
-- **Probabilities (Brier) improve less often than ranking (PR-AUC)**, and boosting is not demonstrably better than logistic regression.
+- **Probabilities (Brier) improve less often than ranking (PR-AUC).**
+- **Boosting vs logistic regression:** by the criterion fixed before the run (decision 6), the protocol boosting model beats the protocol logistic model
+  at 1 h in Poltava (PR-AUC +0.052 †, Brier -0.0029 †), Kharkiv (PR-AUC +0.018 †) and Lviv (+0.046 †, -0.0032 †), and at 30 min in Poltava (both †),
+  Lviv (Brier †), 15 min Kharkiv (Brier †); it is never worse. Partly because the protocol often picks a Platt variant of the logistic model.
+  Against the strict baseline reference boosting still shows nothing in Poltava and Lviv. (An earlier sentence here, "boosting is not demonstrably
+  better", rested on a post-hoc comparison and was wrong; decision 15.)
 - **The hour of the week carries little usable signal in Poltava**, but real signal in Kharkiv, where it is the strongest baseline.
 
 ### Poltava in detail (test block; point values, intervals in `results/poltavska/`)
@@ -111,16 +123,23 @@ Added because at H = 3 h the target is close to saturated (66% of moments in Pol
 - **Lead time caveat:** at 15 min part of the signal is close to nowcasting: a wave already declared in a neighbouring oblast is visible at `t`.
   Legitimate (everything is known at `t`), but the warning comes at most 15 minutes ahead.
 - Why nothing for Lviv: in the test block a neighbour's alert starts in the 2 minutes before Lviv's own start in only 2% of Lviv's alerts, in the 15 minutes before
-  in 11% (Poltava: 17% and 64%). On top of that, Lviv's neighbour features rest largely on invented alert ends (see Data). An earlier README sentence ("in the west alerts
+  in 11% (Poltava: 15% and 63%; `results/data_checks.txt`). On top of that, Lviv's neighbour features rest largely on invented alert ends (see Data). An earlier README sentence ("in the west alerts
   are declared over large areas at once") is not supported by the test-block data and was removed.
 
-## Planned untouched test (Monday 2026-10-12)
+## Planned test on new data (Monday 2026-10-12)
 
-The test block above has been looked at many times. The only data nobody has seen arrives after the snapshot. The test is **pre-registered** in decision 9 of
-`docs/decisions.md`, written before downloading: first compare the two snapshots for late additions; then evaluate the holdout (about 3 days) with exactly the
-protocol above (validation = the 8 weeks before the holdout); primary question Poltava H=3 (prediction: no gain), secondary Kyiv and Kharkiv at 15 min - 1 h
-(prediction: gains); 6-hour-block bootstrap; "inconclusive" unless an interval excludes zero; with about 3 days most cells are expected to be inconclusive.
-The runner (`scripts/run_holdout.py`) is committed and tagged `holdout-freeze` before the download. Result: *to be added on Monday*.
+The test block above has been looked at many times; the data after the snapshot is newer. The test was **pre-registered** in decision 9 of `docs/decisions.md`,
+written before downloading: compare the two snapshots for late additions; evaluate the holdout (about 3 days) with the same selection protocol (validation =
+the 8 weeks before the holdout) and compare the protocol model with the **no-hindsight reference** (bar B; the strict reference is reported as a hindsight bound);
+primary question Poltava H=3 (prediction: no gain), secondary Kyiv and Kharkiv at 15 min - 1 h (prediction: gains). Runner `scripts/run_holdout.py`, tag `holdout-freeze`.
+
+A second review found that this design would hand out verdicts on noise (on the last 3 seen days its 6-hour-block interval called a near-zero difference
+"better"), that it ignores alerts still running at the snapshot end, and that the holdout is **no longer blind**: the live forecasts (decisions 13-14) showed
+eMap answers for the same days. Amendment, registered before the download (decision 15, `analysis/holdout_amended.py`, tag `holdout-freeze-2`): the new
+snapshot is cut 6 h before its end; added records are split into "running at the old end" and true late additions; a cell needs 5 own alert starts;
+**no verdicts**: the differences are shown with "these days only" intervals next to their spread over 3-day windows of the old test block. With about
+3 days the holdout can neither confirm nor refute the predictions. Both runners are run and reported (the frozen one labelled as flawed).
+Result: *to be added on Monday*.
 
 ## Task definition
 
@@ -149,16 +168,16 @@ The runner (`scripts/run_holdout.py`) is committed and tagged `holdout-freeze` b
   test block; for Lviv's neighbours in the test block Rivne 27 of 107, Ternopil 9 of 21, Volyn 18 of 216. In real time such an end is not known. The sensitivity run
   removes moments that depend on an invented end of the *own* oblast only; neighbour and country features still use invented ends.
 - **Check: the official file.** Since late 2025 it holds raion-level alerts only, ends 2026-09-07, has a hole at 2026-08-29..09-02, and every oblast-level row is
-  duplicated. It is deduplicated and raions are merged into oblast episodes. Poltava and Kyiv agree with the volunteer file well (0% and 3% of volunteer starts
-  outside any official episode, May - Aug 28). Kharkiv after merging is almost always "under alert" (386 moments without alert in the check period).
+  duplicated. It is deduplicated and raions are merged into oblast episodes. Poltava and Kyiv agree with the volunteer file well (1% and 4% of volunteer starts
+  outside any official episode, May - Aug 28; all numbers of this section: `analysis/data_checks.py` -> `results/data_checks.txt`). Kharkiv after merging is almost always "under alert" (386 moments without alert in the check period).
 - **Lviv data warning:** 91% of volunteer alert starts in Lviv oblast (May - Aug 28) are not inside any official alert anywhere in the oblast (347 volunteer alerts
-  against 30 official episodes). Different splitting of alerts cannot explain that; the Lviv series describes something the official data does not contain.
+  against 29 official episodes; an earlier version said 30). Different splitting of alerts cannot explain that; the Lviv series describes something the official data does not contain.
   Lviv is kept, with this warning (user's decision).
 - **Choice of Lviv**: picked as a western oblast with fewer alerts than Poltava, using alert counts of the test block (a use of test-period information). It is the
   **most** active western oblast (Lviv 245, Volyn 216, Rivne 107, Khmelnytskyi 75, Chernivtsi 36, Ternopil 21, Ivano-Frankivsk 8, Zakarpattia 0 alerts in the test block),
   not the quietest one, as an earlier README wrongly said.
-- **Late additions**: according to the external review, earlier snapshots miss 1-2 alerts that were added later (up to 14 days late, all naive). I have not verified this;
-  the Monday holdout compares the snapshots first.
+- **Late additions**: according to the external review, earlier snapshots miss 1-2 alerts that were added later (up to 14 days late, all naive). Not verified on old snapshots.
+  A snapshot never holds alerts still running at its end, so their absence is not "late"; the amended holdout comparison separates the two (decision 15).
 - Luhansk oblast is excluded from country-wide counts (permanent siren, not a series). Crimea is not in the data.
 - **Alert levels (yellow / red)**: since about September 2026 Ukraine announces two levels (yellow = drone raid, red = missile or massed attack; decision 12). Neither of our files has a level, so after that date the target mixes both kinds of alert in a way we cannot separate. A live logger of the eMap feed (`demo/emap_logger.py`, one request per minute) collects levels for a later comparison.
 - Raw data is not stored in the repository: `python scripts/download_data.py`.
@@ -206,9 +225,14 @@ The runner (`scripts/run_holdout.py`) is committed and tagged `holdout-freeze` b
   the only clean test.
 - **Asymmetry against the models.** The recent-level baseline is refit daily, the models weekly, and the models have no multi-day rate feature. For claims of a gain this is
   conservative; for the negative Poltava claim it is **not**: part of "the models do not beat the baseline" may be this handicap.
-- **Intervals**: 9 weekly blocks give coarse intervals; the strict reference is chosen once on the full test block, not inside each bootstrap draw; many comparisons
-  (4 oblasts x 5 horizons x several pairs x 2 metrics) and no correction, so about 1 in 20 intervals excludes zero by chance. The stronger evidence is consistency
-  across horizons, metrics, subsets and periods, as in Kyiv and Kharkiv.
+- **Intervals**: 9 weekly blocks give coarse and somewhat too narrow intervals (‡ marks the fragile cells); the strict reference is chosen once on the full
+  test block, not inside each bootstrap draw; many comparisons (4 oblasts x 5 horizons x several pairs x 2 metrics) and no correction, so about 1 in 20
+  intervals excludes zero by chance. The stronger evidence is consistency across horizons, metrics and subsets, as in Kyiv and Kharkiv; the earlier
+  period is not independent of the main one.
+- **Unstable choice**: the protocol picks the family with the lowest validation Brier, often by a difference in the 4th decimal (Poltava 1 h: 0.2134 vs
+  0.2147, yet test PR-AUC 0.299 vs 0.336). Shifting the validation by 3 days changes several choices.
+- **Snapshot end**: a snapshot holds finished alerts only, so alerts running at its end are missing and the labels of the last ~H hours of the test
+  block can be falsely 0 (a few hours out of 8 weeks; the "without the last 24 h" subset covers 1 h and 3 h).
 - For the logistic regression the best `C` is often the smallest of the grid: validation keeps asking for predictions close to a simple rate.
 - The volunteer file is unofficial; Lviv in particular disagrees with the official data (see Data). Invented ends enter the neighbour features; late additions are not modelled.
 - Neighbour lists are from memory of the map.
@@ -217,21 +241,34 @@ The runner (`scripts/run_holdout.py`) is committed and tagged `holdout-freeze` b
 
 Python 3.12, tested on Windows 11.
 
+Run the commands in **Git Bash** on Windows (in PowerShell or cmd, `bash` may start WSL, which has no Python), or in any shell on Linux/macOS.
+
 ```bash
 python -m venv .venv
-.venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
+source .venv/Scripts/activate     # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/download_data.py   # about 40 MB, pinned snapshot, sizes are checked
-python -m pytest                  # about 2 minutes
+python -m pytest -rs              # about 2 minutes; -rs lists skipped tests (the real-data leakage tests skip if the data is missing)
 bash scripts/run_region.sh "Poltavska oblast"   # experiment + robustness + boosting + short horizons for one oblast, roughly 25 minutes
 bash scripts/run_region.sh "Kyivska oblast"     # also: Kharkivska oblast, Lvivska oblast
 python scripts/summarize_regions.py             # builds results/summary.md from the saved outputs
 python scripts/make_figures.py                  # README figures (light and dark) into docs/figures/
 python scripts/run_holdout.py --simulate-days 3 # dry run of the holdout test on already seen data (code check only)
+python analysis/data_checks.py > results/data_checks.txt   # numbers of the Data section
+python -m pytest analysis/ demo/                 # tests of the amended holdout runner and the demo
 ```
 
-The Monday holdout: `python scripts/download_data.py --new-snapshot`, then `python scripts/run_holdout.py --new data/holdout/volunteer_data_en.csv`.
-Results are deterministic (fixed seeds). The outputs of the runs used in this README are in `results/<oblast>/`.
+The Monday holdout (decision 15):
+
+```bash
+python scripts/download_data.py --new-snapshot
+cp data/holdout/SNAPSHOT.txt results/holdout/
+python scripts/run_holdout.py --new data/holdout/volunteer_data_en.csv > results/holdout/frozen.txt
+python analysis/holdout_amended.py --new data/holdout/volunteer_data_en.csv   # writes results/holdout/amended.txt
+```
+
+Results are deterministic (fixed seeds). The outputs of the runs used in this README are in `results/<oblast>/`. A rerun reproduces them except the
+run-time stamps (`[78s]`) in the headers of `experiment*.txt`.
 
 ## Layout
 
@@ -247,8 +284,10 @@ Results are deterministic (fixed seeds). The outputs of the runs used in this RE
 | `tests/` | unit tests, including the leakage checks |
 | `results/<oblast>/` | `experiment.txt`, `boosting.txt`, `robustness.txt` (main horizons), `experiment_short.txt`, `boosting_short.txt` (15/30 min) |
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
-| `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, the review and the holdout pre-registration |
+| `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, both reviews, the holdout pre-registration and its amendment |
 | `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
+| `analysis/holdout_amended.py` | amended holdout runner (decision 15), tests in `analysis/test_holdout_amended.py`; `results/holdout/` holds its reference spread and, after Monday, both holdout outputs and the snapshot SHA |
+| `analysis/data_checks.py` | the numbers of the Data section (`results/data_checks.txt`) |
 | `analysis/weekend_check.py` | side check of the claim "fewer alerts at weekends" (`results/weekend_check.txt`; frozen code imported read-only) |
 | `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only); live eMap logger (`emap_logger.py`) |
 
