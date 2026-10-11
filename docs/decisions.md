@@ -385,3 +385,11 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
 - Report fix (no forecast changed): an answer window that overlaps a gap in the log stays unknown unless a start was seen in it, because alerts that
   started and ended inside the gap are not in the log. For the first forecast the 15 and 30 min answers are known (no alert; model 3% / 7%,
   baseline 4% / 16%), the 1 h and 3 h windows overlap the switch-off and stay open until the volunteer data (which covers the gap) arrive.
+- Second live forecast: all-clear at 2026-10-10 17:54:29 UTC, written 6 s later (counted; history flagged incomplete because of the first gap).
+  2026-10-10 19:27-2026-10-11 05:48 UTC the computer was off again (second gap, ~10 h, overnight). Any all-clears inside it were not forecast;
+  the restart order was the same. eMap answers so far (illustration, n = 7 answered, 3 with an alert, all yellow, all on one evening):
+  model closer when no alert followed (lower probabilities), baseline closer when one did; mean Brier model 0.159, baseline 0.107.
+  The 3 h "alert" of the first forecast is an oblast start at 17:11:17 UTC, 72 s before its window closed: the volunteer answer may differ.
+  Known artefact of the second gap: the Poltava raions that were on at 19:27 get the restart poll as their end and overlap the alerts that started at
+  05:20 / 05:32, so the log shows one episode from 18:24 to now; the real all-clear inside the gap is unknown. Forecasts in the next 24 h are flagged
+  incomplete (complete_24h = false) and the code is not changed mid-experiment.
