@@ -472,3 +472,8 @@ Amendment to decision 9 (fixed now, before the download). The frozen runner is s
 - Loading: an overlap inside one oblast is merged with a warning instead of stopping the run.
 - Record: SNAPSHOT.txt (SHA, size, sha256) copied to results/holdout/; the outputs of both runners saved there and committed.
 - Live forecasts keep being written, but no report of their answers is run until the holdout has run.
+- Done the same day, before the download: analysis/holdout_amended.py with 3 tests; results/holdout/reference_spread.csv (old test block cut at its end - 6 h,
+  18 windows of 3 days, 16 for Lviv where two windows had fewer than 5 starts); dry runs of both runners on the last 3 seen days kept for comparison
+  (results/holdout/dryrun_frozen.txt: main cell "better"; dryrun_amended.txt: the same cell without a verdict, its dBrier outside the old windows' middle 90%).
+  Limitation of the reference spread: it uses the models the protocol chose on the old test block, while the holdout re-selects (the dry run already
+  picks other ones), so it gives the scale of the 3-day noise, not an exact null distribution. Tagged `holdout-freeze-2`.

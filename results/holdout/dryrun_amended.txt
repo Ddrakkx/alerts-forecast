@@ -1,0 +1,80 @@
+DRY RUN on already seen data (code check only): holdout = last 3 days of the current snapshot
+data end 2026-10-09 05:12:41 UTC
+holdout 2026-10-06 05:12 .. E - H, E = end - 6 h = 2026-10-08 23:12 UTC (E - old end = 66.0 h); validation 2026-08-11 05:12 .. holdout start - H; intervals: 6-hour blocks, 1000 draws, seed 0, these days only. No verdicts.
+
+[Poltavska oblast, H = 3 h, PRIMARY (pre-registered)] holdout moments 191, own alert starts 19, positive 148, negative 43, 6-hour blocks 11
+  protocol model logreg[own+nbr+cty] (C=0.001|365d): PR-AUC 0.807, Brier 0.1802
+  bar B recent_level (|3d): PR-AUC 0.778, Brier 0.2178
+  vs bar B, these days only: dPR-AUC +0.0294 [-0.1093, +0.1480] | dBrier -0.0377 [-0.0698, -0.0053]
+  old test block, 18 windows of 3 days (logreg[own+nbr+cty]+platt vs recent_level): dPR-AUC 8 weeks +0.0029, middle 90% of windows [-0.0533, +0.1235] -> holdout inside | dBrier 8 weeks +0.0005, middle 90% [-0.0201, +0.0159] -> holdout OUTSIDE
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=400|all / recent_level||14d): dPR-AUC -0.0975 [-0.2512, +0.0164] | dBrier -0.0071 [-0.0282, +0.0138]
+
+[Kyivska oblast, H = 0.25 h, secondary (pre-registered)] holdout moments 216, own alert starts 31, positive 30, negative 186, 6-hour blocks 12
+  protocol model logreg[own+nbr+cty]+platt (C=0.1|365d): PR-AUC 0.210, Brier 0.1181
+  bar B recent_level (|3d): PR-AUC 0.171, Brier 0.1206
+  vs bar B, these days only: dPR-AUC +0.0392 [-0.0244, +0.2228] | dBrier -0.0025 [-0.0079, +0.0030]
+  old test block, 18 windows of 3 days (logreg[own+nbr] vs recent_activity): dPR-AUC 8 weeks +0.0660, middle 90% of windows [+0.0102, +0.1561] -> holdout inside | dBrier 8 weeks -0.0058, middle 90% [-0.0166, +0.0004] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=6400|all / recent_level||30d): dPR-AUC +0.0056 [-0.1178, +0.1942] | dBrier -0.0018 [-0.0077, +0.0048]
+
+[Kyivska oblast, H = 0.5 h, secondary (pre-registered)] holdout moments 215, own alert starts 31, positive 60, negative 155, 6-hour blocks 12
+  protocol model logreg[own+nbr+cty]+platt (C=0.001|365d): PR-AUC 0.365, Brier 0.1974
+  bar B recent_level (|3d): PR-AUC 0.342, Brier 0.2036
+  vs bar B, these days only: dPR-AUC +0.0233 [-0.0841, +0.2203] | dBrier -0.0062 [-0.0193, +0.0089]
+  old test block, 18 windows of 3 days (logreg[own+nbr] vs recent_activity): dPR-AUC 8 weeks +0.0978, middle 90% of windows [+0.0074, +0.2147] -> holdout inside | dBrier 8 weeks -0.0191, middle 90% [-0.0456, +0.0002] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (recent_level||3d / recent_level||14d): dPR-AUC +0.0233 [-0.0841, +0.2203] | dBrier -0.0048 [-0.0177, +0.0124]
+
+[Kyivska oblast, H = 1 h, secondary (pre-registered)] holdout moments 214, own alert starts 31, positive 104, negative 110, 6-hour blocks 12
+  protocol model logreg[own+nbr+cty]+platt (C=0.001|365d): PR-AUC 0.496, Brier 0.2570
+  bar B recent_level (|3d): PR-AUC 0.558, Brier 0.2551
+  vs bar B, these days only: dPR-AUC -0.0627 [-0.1684, +0.0840] | dBrier +0.0019 [-0.0200, +0.0282]
+  old test block, 18 windows of 3 days (logreg[own+nbr] vs recent_activity): dPR-AUC 8 weeks +0.0843, middle 90% of windows [+0.0167, +0.2046] -> holdout OUTSIDE | dBrier 8 weeks -0.0415, middle 90% [-0.1087, -0.0017] -> holdout OUTSIDE
+  hindsight bound vs best baseline configuration on the holdout (recent_level||3d / recent_level||30d): dPR-AUC -0.0627 [-0.1684, +0.0840] | dBrier +0.0051 [-0.0165, +0.0388]
+
+[Kharkivska oblast, H = 0.25 h, secondary (pre-registered)] holdout moments 181, own alert starts 62, positive 54, negative 127, 6-hour blocks 12
+  protocol model logreg[own+nbr] (C=0.1|180d): PR-AUC 0.390, Brier 0.2088
+  bar B hour_of_week_smooth (k=25|90d): PR-AUC 0.409, Brier 0.2113
+  vs bar B, these days only: dPR-AUC -0.0191 [-0.1245, +0.1089] | dBrier -0.0025 [-0.0119, +0.0069]
+  old test block, 18 windows of 3 days (logreg[own+nbr+cty]+platt vs hour_of_week_smooth): dPR-AUC 8 weeks +0.0363, middle 90% of windows [-0.0590, +0.1407] -> holdout inside | dBrier 8 weeks -0.0047, middle 90% [-0.0123, +0.0056] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week||180d / hour_of_week||180d): dPR-AUC -0.0459 [-0.1362, +0.0604] | dBrier +0.0033 [-0.0047, +0.0127]
+
+[Kharkivska oblast, H = 0.5 h, secondary (pre-registered)] holdout moments 180, own alert starts 62, positive 89, negative 91, 6-hour blocks 12
+  protocol model logreg[own+nbr] (C=0.1|180d): PR-AUC 0.653, Brier 0.2370
+  bar B hour_of_week_smooth (k=25|90d): PR-AUC 0.590, Brier 0.2542
+  vs bar B, these days only: dPR-AUC +0.0631 [-0.0415, +0.1745] | dBrier -0.0172 [-0.0326, +0.0007]
+  old test block, 18 windows of 3 days (logreg[own+nbr+cty]+platt vs hour_of_week_smooth): dPR-AUC 8 weeks +0.0476, middle 90% of windows [-0.0438, +0.1635] -> holdout inside | dBrier 8 weeks -0.0108, middle 90% [-0.0243, +0.0009] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=100|180d / hour_of_week||180d): dPR-AUC +0.0256 [-0.0638, +0.1249] | dBrier -0.0071 [-0.0245, +0.0112]
+
+[Kharkivska oblast, H = 1 h, secondary (pre-registered)] holdout moments 178, own alert starts 62, positive 133, negative 45, 6-hour blocks 12
+  protocol model logreg[own+nbr+cty] (C=0.003|180d): PR-AUC 0.908, Brier 0.1695
+  bar B hour_of_week_smooth (k=100|90d): PR-AUC 0.887, Brier 0.1984
+  vs bar B, these days only: dPR-AUC +0.0217 [-0.0334, +0.0836] | dBrier -0.0289 [-0.0437, -0.0160]
+  old test block, 18 windows of 3 days (logreg[own+nbr+cty]+platt vs hour_of_week_smooth): dPR-AUC 8 weeks +0.0268, middle 90% of windows [-0.0684, +0.1085] -> holdout inside | dBrier 8 weeks -0.0081, middle 90% [-0.0221, +0.0049] -> holdout OUTSIDE
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week||90d / hour_of_week||180d): dPR-AUC +0.0216 [-0.0334, +0.0789] | dBrier -0.0044 [-0.0187, +0.0093]
+
+[Lvivska oblast, H = 0.25 h, reported with the data warning] holdout moments 245, own alert starts 11, positive 10, negative 235, 6-hour blocks 12
+  protocol model logreg[own] (C=0.01|180d): PR-AUC 0.057, Brier 0.0392
+  bar B recent_level (|3d): PR-AUC 0.034, Brier 0.0395
+  vs bar B, these days only: dPR-AUC +0.0230 [+0.0002, +0.0757] | dBrier -0.0003 [-0.0006, +0.0001]
+  old test block, 16 windows of 3 days (logreg[own+nbr+cty]+platt vs recent_level): dPR-AUC 8 weeks +0.0205, middle 90% of windows [-0.0199, +0.0827] -> holdout inside | dBrier 8 weeks -0.0001, middle 90% [-0.0014, +0.0007] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (recent_level||14d / constant||90d): dPR-AUC +0.0100 [-0.0240, +0.0731] | dBrier +0.0001 [-0.0004, +0.0006]
+
+[Lvivska oblast, H = 0.5 h, reported with the data warning] holdout moments 244, own alert starts 11, positive 20, negative 224, 6-hour blocks 12
+  protocol model logreg[own] (C=0.01|180d): PR-AUC 0.155, Brier 0.0754
+  bar B recent_level (|3d): PR-AUC 0.069, Brier 0.0767
+  vs bar B, these days only: dPR-AUC +0.0858 [-0.0058, +0.2231] | dBrier -0.0013 [-0.0031, +0.0004]
+  old test block, 16 windows of 3 days (logreg[own+nbr]+platt vs recent_level): dPR-AUC 8 weeks -0.0173, middle 90% of windows [-0.0232, +0.0963] -> holdout inside | dBrier 8 weeks +0.0012, middle 90% [-0.0040, +0.0101] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (recent_level||14d / recent_activity||90d): dPR-AUC +0.0600 [-0.0525, +0.2166] | dBrier +0.0005 [-0.0014, +0.0024]
+
+[Lvivska oblast, H = 1 h, reported with the data warning] holdout moments 242, own alert starts 11, positive 37, negative 205, 6-hour blocks 12
+  protocol model logreg[own] (C=0.1|180d): PR-AUC 0.200, Brier 0.1309
+  bar B recent_level (|3d): PR-AUC 0.128, Brier 0.1342
+  vs bar B, these days only: dPR-AUC +0.0717 [-0.0172, +0.2128] | dBrier -0.0033 [-0.0090, +0.0020]
+  old test block, 16 windows of 3 days (logreg[own+nbr]+platt vs recent_level): dPR-AUC 8 weeks -0.0148, middle 90% of windows [-0.0478, +0.0823] -> holdout inside | dBrier 8 weeks +0.0014, middle 90% [-0.0105, +0.0193] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week||all / constant||90d): dPR-AUC +0.0177 [-0.1973, +0.1372] | dBrier +0.0013 [-0.0061, +0.0091]
+
+[Lvivska oblast, H = 3 h, reported with the data warning] holdout moments 235, own alert starts 11, positive 96, negative 139, 6-hour blocks 11
+  protocol model logreg[own] (C=0.1|365d): PR-AUC 0.381, Brier 0.2662
+  bar B recent_level (|3d): PR-AUC 0.343, Brier 0.2693
+  vs bar B, these days only: dPR-AUC +0.0376 [-0.1080, +0.1645] | dBrier -0.0031 [-0.0286, +0.0272]
+  old test block, 16 windows of 3 days (logreg[own]+platt vs recent_level): dPR-AUC 8 weeks -0.0214, middle 90% of windows [-0.0741, +0.1880] -> holdout inside | dBrier 8 weeks +0.0042, middle 90% [-0.0501, +0.0659] -> holdout inside
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=1600|all / constant||90d): dPR-AUC -0.1066 [-0.3320, +0.1059] | dBrier +0.0244 [-0.0243, +0.0762]
