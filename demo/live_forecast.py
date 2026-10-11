@@ -1,14 +1,17 @@
-"""Live forecasts at each all-clear in Poltava oblast, as pre-registered in docs/decisions.md (decision 13).
+"""Live forecasts at each all-clear in one oblast, as pre-registered in docs/decisions.md (decision 13: Poltava; decision 14: Kyiv
+oblast, Kharkiv, Lviv).
 
 Reads only the local eMap log written by demo/emap_logger.py (no requests to any server). At start it chooses and trains the
 models exactly like the holdout runner (validation = 8 weeks before the end of our snapshot, purged by H; protocol model = best
 logistic family, baseline = bar B; trained once on the snapshot). Then, once a minute, it rebuilds the live history (volunteer snapshot +
-eMap raion alerts merged into oblast episodes) and, for every Poltava all-clear seen after the start, writes one forecast line.
+eMap raion alerts merged into oblast episodes) and, for every all-clear of the oblast seen after the start, writes one forecast line.
 
-    python demo/live_forecast.py            # watch and forecast (Ctrl+C to stop)
-    python demo/live_forecast.py --report   # answers from the eMap log and a summary (does not forecast)
+    python demo/live_forecast.py                                   # Poltava: watch and forecast (Ctrl+C to stop)
+    python demo/live_forecast.py --region "Kyivska oblast"         # another oblast, one process per oblast
+    python demo/live_forecast.py --report [--region ...]           # answers from the eMap log and a summary (does not forecast)
 
-Files in demo/live/ (committed regularly as the record): forecasts.jsonl (never edited), outcomes.csv and summary.txt (recomputed).
+Files (committed regularly as the record): forecasts.jsonl (never edited), state.json, outcomes.csv and summary.txt (recomputed),
+in demo/live/ for Poltava and in demo/live/<kyivska|kharkivska|lvivska>/ for the others.
 """
 import argparse
 import json
@@ -29,7 +32,7 @@ from alerts_forecast.data import REGION, load_regions, merge_intervals, validate
 from alerts_forecast.experiment import (  # noqa: E402
     BASE_WINDOWS, POSTHOC_FAMILIES, PRESET_BASELINES, RECENT_LEVEL, RL_WINDOWS, configs, feature_index, join_features, run_configs,
 )
-from alerts_forecast.features import build_features, neighbors_of  # noqa: E402
+from alerts_forecast.features import NEIGHBORS_BY_REGION, build_features, neighbors_of  # noqa: E402
 from alerts_forecast.leakage import UNKNOWN_END  # noqa: E402
 from alerts_forecast.metrics import brier  # noqa: E402
 from alerts_forecast.target import build_frame, main_sample, state_at  # noqa: E402
@@ -41,7 +44,6 @@ OUT = ROOT / "demo" / "live"
 HORIZONS = [(0.25, "15 min"), (0.5, "30 min"), (1.0, "1 h"), (3.0, "3 h")]
 LOGGER_START = pd.Timestamp("2026-10-10 12:25:09", tz="UTC")
 MAX_LAG = pd.Timedelta(minutes=3)  # a forecast made later than this after the all-clear is recorded but not counted
-POLTAVA_UA = "Полтавська область"
 UA_TO_EN = {
     "Вінницька область": "Vinnytska oblast", "Волинська область": "Volynska oblast", "Дніпропетровська область": "Dnipropetrovska oblast",
     "Донецька область": "Donetska oblast", "Житомирська область": "Zhytomyrska oblast", "Закарпатська область": "Zakarpatska oblast",
@@ -52,6 +54,12 @@ UA_TO_EN = {
     "Херсонська область": "Khersonska oblast", "Хмельницька область": "Khmelnytska oblast", "Черкаська область": "Cherkaska oblast",
     "Чернівецька область": "Chernivetska oblast", "Чернігівська область": "Chernihivska oblast", "м. Київ": "Kyiv City",
 }  # Crimea, Sevastopol and Luhansk oblast are not series in our data
+EN_TO_UA = {en: ua for ua, en in UA_TO_EN.items()}
+
+
+def out_dir(region: str) -> Path:
+    """Poltava keeps the folder of decision 13; the other oblasts get demo/live/<slug>/ (slug as in results/)."""
+    return OUT if region == REGION else OUT / region.split()[0].lower()
 
 
 def ts(x) -> pd.Timestamp:
@@ -122,23 +130,23 @@ def live_history(snapshot_regions: dict, closed: list, open_: dict) -> dict:
     return out
 
 
-def poltava_all_clears(closed: list, open_: dict) -> list:
-    """Moments at which Poltava oblast had no enabled entry any more (the poll at which that was seen)."""
-    ep = oblast_episodes(closed, open_, POLTAVA_UA)
+def all_clears(closed: list, open_: dict, oblast_ua: str) -> list:
+    """Moments at which the oblast had no enabled entry any more (the poll at which that was seen)."""
+    ep = oblast_episodes(closed, open_, oblast_ua)
     return [e for e in ep["finished_at"] if e < UNKNOWN_END]
 
 
 # ---------------------------------------------------------------- models
-def train(regions: dict, data_end: pd.Timestamp) -> dict:
-    nbrs = neighbors_of(REGION)
+def train(regions: dict, data_end: pd.Timestamp, region: str = REGION) -> dict:
+    nbrs = neighbors_of(region)
     hs = [h for h, _ in HORIZONS]
-    feats = build_features(regions, REGION, feature_index(regions[REGION], data_end, hs), nbrs)
+    feats = build_features(regions, region, feature_index(regions[region], data_end, hs), nbrs)
     cfg = configs(nbrs)
     fns = {f"{fam}|{par}|{win}": (fn, BASE_WINDOWS[win]) for fam, par, win, fn in cfg}
     fns.update({f"{RECENT_LEVEL}||{w}": (constant_rate, d) for w, d in RL_WINDOWS.items()})
     models = {}
     for h, label in HORIZONS:
-        sample = join_features(main_sample(build_frame(regions[REGION], data_end, h)), feats)
+        sample = join_features(main_sample(build_frame(regions[region], data_end, h)), feats)
         val = run_configs(sample, h, data_end - pd.Timedelta(weeks=8), data_end - pd.Timedelta(hours=h), cfg)
         vb = {c: brier(val["y"], val[c]) for c in val.columns if "|" in c}
         chosen = {}
@@ -158,11 +166,11 @@ def train(regions: dict, data_end: pd.Timestamp) -> dict:
     return models
 
 
-def forecast(t: pd.Timestamp, history: dict, models: dict) -> dict:
+def forecast(t: pd.Timestamp, history: dict, models: dict, region: str = REGION) -> dict:
     idx = pd.DatetimeIndex([t])
-    nbrs = neighbors_of(REGION)
-    f = build_features(history, REGION, idx, nbrs)
-    st = state_at(history[REGION], idx)
+    nbrs = neighbors_of(region)
+    f = build_features(history, region, idx, nbrs)
+    st = state_at(history[region], idx)
     row = f.assign(minutes_since_last_end=st["minutes_since_last_end"].to_numpy(), y=False, prev_naive=False)
     out = {}
     for label, m in models.items():
@@ -210,14 +218,15 @@ def last_successful_poll(polls_csv: Path) -> pd.Timestamp:
     return ts(last) if last else pd.Timestamp(0, tz="UTC")
 
 
-def report() -> None:
-    fpath = OUT / "forecasts.jsonl"
+def report(region: str = REGION) -> None:
+    out, oblast_ua = out_dir(region), EN_TO_UA[region]
+    fpath = out / "forecasts.jsonl"
     if not fpath.exists():
-        print("no forecasts yet")
+        print(f"{region}: no forecasts yet")
         return
     recs = [json.loads(x) for x in fpath.read_text(encoding="utf-8").splitlines() if x.strip()]
     closed, open_ = intervals(load_log(LOG))
-    starts = [(s, lvl) for o, r, s, e, lvl in closed if o == POLTAVA_UA] + [(s, lvl) for (o, r), (s, lvl) in open_.items() if o == POLTAVA_UA]
+    starts = [(s, lvl) for o, r, s, e, lvl in closed if o == oblast_ua] + [(s, lvl) for (o, r), (s, lvl) in open_.items() if o == oblast_ua]
     last_poll = last_successful_poll(LOG / "polls.csv")  # not the last event: quiet minutes write no event
     gaps = log_gaps(LOG / "polls.csv")
     rows = []
@@ -234,8 +243,8 @@ def report() -> None:
                          "p_model": fc["model"]["p"], "p_baseline": fc["baseline"]["p"],
                          "emap_any": int(any_) if known or any_ else None, "emap_red": int(red) if known or red else None})
     df = pd.DataFrame(rows)
-    df.to_csv(OUT / "outcomes.csv", index=False)
-    lines = [f"report at {datetime.now(timezone.utc).isoformat(timespec='seconds')}, last log poll {last_poll}", ""]
+    df.to_csv(out / "outcomes.csv", index=False)
+    lines = [f"{region}: report at {datetime.now(timezone.utc).isoformat(timespec='seconds')}, last log poll {last_poll}", ""]
     for label, _ in [(lb, h) for h, lb in HORIZONS]:
         for truth in ("emap_any", "emap_red"):
             d = df[(df.H == label) & df.counted & df[truth].notna()]
@@ -246,36 +255,39 @@ def report() -> None:
             closer = int((abs(d.p_model - y) < abs(d.p_baseline - y)).sum())
             lines.append(f"{label:7s} {truth}: n={len(d)}, alerts={int(y.sum())}, Brier model {brier(y, d.p_model):.4f}, baseline {brier(y, d.p_baseline):.4f}, "
                          f"model closer in {closer} of {len(d)}")
-    lines += ["", "Illustration only (decision 13): too few events for any significance. Primary answers (volunteer data) come later."]
-    (OUT / "summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    lines += ["", f"Illustration only (decision {13 if region == REGION else 14}): too few events for any significance. "
+              "Primary answers (volunteer data) come later."]
+    (out / "summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
 
 
 # ---------------------------------------------------------------- main loop
-def watch() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
+def watch(region: str = REGION) -> None:
+    out, oblast_ua = out_dir(region), EN_TO_UA[region]
+    out.mkdir(parents=True, exist_ok=True)
     started = pd.Timestamp.now(tz="UTC")
-    print(f"forecaster started {started.isoformat(timespec='seconds')}; all-clears before this are not used", flush=True)
+    print(f"forecaster for {region} started {started.isoformat(timespec='seconds')}; all-clears before this are not used", flush=True)
     regions, data_end = load_regions(ROOT / "data" / "raw" / "volunteer_data_en.csv")
     missing = set(UA_TO_EN.values()) - set(regions)
     if missing:
         raise SystemExit(f"names not in the volunteer data: {missing}")
     print("training (selection on the 8 weeks before the snapshot end, as in the holdout runner)...", flush=True)
-    models = train(regions, data_end)
-    state_path = OUT / "state.json"
+    models = train(regions, data_end, region)
+    state_path = out / "state.json"
     done = set(json.loads(state_path.read_text(encoding="utf-8"))["done"]) if state_path.exists() else set()
     print(f"watching {LOG} once a minute", flush=True)
     while True:
         try:
             closed, open_ = intervals(load_log(LOG))
-            new = [e for e in poltava_all_clears(closed, open_) if e >= started and e.isoformat() not in done]
+            new = [e for e in all_clears(closed, open_, oblast_ua) if e >= started and e.isoformat() not in done]
             if new:
                 history = live_history(regions, closed, open_)
                 for t in sorted(new):
                     made = pd.Timestamp.now(tz="UTC")
                     rec = {"t": t.isoformat(), "made_at": made.isoformat(timespec="seconds"), "lag_s": round((made - t).total_seconds()),
-                           "counted": bool(made - t <= MAX_LAG), "history": history_status(t, log_gaps(LOG / "polls.csv")), **forecast(t, history, models)}
-                    with open(OUT / "forecasts.jsonl", "a", encoding="utf-8") as fh:
+                           "counted": bool(made - t <= MAX_LAG), "history": history_status(t, log_gaps(LOG / "polls.csv")),
+                           **forecast(t, history, models, region)}
+                    with open(out / "forecasts.jsonl", "a", encoding="utf-8") as fh:
                         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     done.add(t.isoformat())
                     state_path.write_text(json.dumps({"done": sorted(done)}), encoding="utf-8")
@@ -289,5 +301,6 @@ def watch() -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--region", default=REGION, choices=sorted(NEIGHBORS_BY_REGION))
     args = ap.parse_args()
-    report() if args.report else watch()
+    report(args.region) if args.report else watch(args.region)

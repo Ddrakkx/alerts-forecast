@@ -38,14 +38,14 @@ def test_intervals_union_and_all_clear(tmp_path):
     ep = LF.oblast_episodes(closed, open_, P)
     assert len(ep) == 1  # A (11:50-12:10) and B (12:04:30-12:20) overlap: one oblast episode
     assert ep["started_at"].iloc[0] == pd.Timestamp("2026-10-10 11:50", tz="UTC")
-    assert LF.poltava_all_clears(closed, open_) == [pd.Timestamp("2026-10-10 12:20", tz="UTC")]  # the poll that saw the last raion off
+    assert LF.all_clears(closed, open_, P) == [pd.Timestamp("2026-10-10 12:20", tz="UTC")]  # the poll that saw the last raion off
 
 
 def test_running_alert_has_unknown_end_and_no_all_clear(tmp_path):
     write_log(tmp_path, {"2026-10-10T120000+0000": snap({"A район": (True, "2026-10-10T11:50:00.000Z", "red")})}, [])
     closed, open_ = LF.intervals(LF.load_log(tmp_path))
     ep = LF.oblast_episodes(closed, open_, P)
-    assert ep["finished_at"].iloc[0] == LF.UNKNOWN_END and LF.poltava_all_clears(closed, open_) == []
+    assert ep["finished_at"].iloc[0] == LF.UNKNOWN_END and LF.all_clears(closed, open_, P) == []
 
 
 def test_a_logger_restart_does_not_lose_an_end(tmp_path):
@@ -54,7 +54,7 @@ def test_a_logger_restart_does_not_lose_an_end(tmp_path):
                          "2026-10-10T123000+0000": snap({"A район": (False, None, None)})}, [])
     closed, open_ = LF.intervals(LF.load_log(tmp_path))
     assert open_ == {} and closed[0][3] == pd.Timestamp("2026-10-10 12:30", tz="UTC")  # end known only at the second snapshot
-    assert LF.poltava_all_clears(closed, open_) == [pd.Timestamp("2026-10-10 12:30", tz="UTC")]
+    assert LF.all_clears(closed, open_, P) == [pd.Timestamp("2026-10-10 12:30", tz="UTC")]
 
 
 def test_last_successful_poll_ignores_errors_and_is_not_the_last_event(tmp_path):
@@ -74,3 +74,20 @@ def test_gaps_in_the_log_mark_the_history_incomplete(tmp_path):
     st = LF.history_status(pd.Timestamp("2026-10-12 12:00", tz="UTC"), gaps)  # 24 h after the switch-off gap: complete again
     assert st["complete_24h"] is True and st["complete_7d"] is False and len(st["gaps_last_7d"]) == 2
     assert LF.history_status(pd.Timestamp("2026-10-10 17:00", tz="UTC"), gaps)["complete_24h"] is False
+
+
+def test_other_oblasts_use_their_own_entries_and_folders(tmp_path):
+    # Kyiv City is a separate state in the feed: its alert must not keep Kyiv oblast "under alert"
+    feed = {"version": 10, "states": {
+        "Київська область": {"enabled": False, "enabled_at": None, "alert_level": None,
+                             "districts": {"Бучанський район": {"enabled": True, "enabled_at": "2026-10-11T07:00:00.000Z", "alert_level": "yellow"}}},
+        "м. Київ": {"enabled": True, "enabled_at": "2026-10-11T06:50:00.000Z", "alert_level": "red", "districts": {}}}}
+    write_log(tmp_path, {"2026-10-11T071000+0000": feed}, [
+        {"logged_at": "2026-10-11T07:20:00+00:00", "oblast": "Київська область", "raion": "Бучанський район", "event": "end",
+         "started_at": "2026-10-11T07:00:00.000Z", "alert_level": "yellow", "ended_between": ["2026-10-11T07:19:00+00:00", "2026-10-11T07:20:00+00:00"]}])
+    closed, open_ = LF.intervals(LF.load_log(tmp_path))
+    assert LF.all_clears(closed, open_, "Київська область") == [pd.Timestamp("2026-10-11 07:20", tz="UTC")]
+    assert LF.all_clears(closed, open_, "м. Київ") == [] and LF.all_clears(closed, open_, P) == []
+    assert LF.out_dir("Poltavska oblast") == LF.OUT  # the folder of decision 13 is unchanged
+    assert LF.out_dir("Kyivska oblast") == LF.OUT / "kyivska" and LF.out_dir("Kharkivska oblast") == LF.OUT / "kharkivska"
+    assert {LF.EN_TO_UA[r] for r in LF.NEIGHBORS_BY_REGION} == {P, "Київська область", "Харківська область", "Львівська область"}

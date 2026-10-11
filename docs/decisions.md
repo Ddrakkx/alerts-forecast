@@ -393,3 +393,22 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   Known artefact of the second gap: the Poltava raions that were on at 19:27 get the restart poll as their end and overlap the alerts that started at
   05:20 / 05:32, so the log shows one episode from 18:24 to now; the real all-clear inside the gap is unknown. Forecasts in the next 24 h are flagged
   incomplete (complete_24h = false) and the code is not changed mid-experiment.
+
+## 14. Live forecasts for Kyiv oblast, Kharkiv and Lviv (pre-registered 2026-10-11, before their first forecast)
+- Same design as decision 13 in every point: trigger (the last enabled raion or oblast entry of the oblast goes off, t = that poll),
+  model and baseline chosen per oblast and horizon exactly as the holdout runner does (lr_best and bar B, 8 weeks before the snapshot end, purged by H),
+  features, the 3-minute rule, answers (volunteer primary after the holdout, eMap any / red at once), illustration only. One process per oblast;
+  each oblast is reported separately, nothing is pooled. Kyiv City is a separate entry in the feed and not part of the Kyiv oblast trigger
+  (in our data it is a separate series and a neighbour).
+- Code: `--region` in demo/live_forecast.py; output in demo/live/<kyivska|kharkivska|lvivska>/. Poltava's folder and behaviour are unchanged
+  (checked: its recomputed report equals the one before the change row by row; the running Poltava process was not restarted).
+- Measured before the start, on 6.5 h of log (2026-10-10/11, mostly one heavy drone day): share of logged time with the eMap union on, against
+  the share of time under alert in the volunteer data over the last 8 weeks: Poltava 59% vs 16%, Kyiv oblast 88% vs 12%, Kharkiv 93% vs 23%,
+  Lviv 3% vs 10%. So the eMap raion union (any level) is not the same series as the volunteer one; how they relate is checked only after the holdout
+  (decision 12). This is known problem (1) of decision 13, now with numbers. Stated in advance:
+  (1) live features (own counts, share of time under alert) can lie far outside the training range: the forecasts test the whole live pipeline,
+      not the model as it was evaluated;
+  (2) Kharkiv: very few all-clears are expected (official raions merged gave 386 moments without alert against about 4,200 volunteer ones, decision 7;
+      the eMap union was on almost the whole logged time);
+  (3) Lviv: the volunteer series has many alerts the official feed lacks (README data warning), so eMap "yes" answers will be rare.
+- No other trigger (red only, without front-line raions, ...) is tried now: picking one after looking at the live log would be a post-hoc choice.
