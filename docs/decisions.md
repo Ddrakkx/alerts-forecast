@@ -422,3 +422,53 @@ with our volunteer source? Everything new is in demo/; src/ and scripts/ are unt
   2024 (-10%) but not in 2025 or 2026; over the last 52 weeks only Kharkiv starts are clearly lower (-7%), and the 3 h target shows no
   difference in any of the four oblasts. About 45 cells were looked at, so a single "lower" cell can be chance.
 - Nothing in the models changes: they already have an is_weekend feature, and the hour-of-week baselines include the day of week.
+
+## 15. Second external review (2026-10-11): verification, corrections, and an amendment to the holdout (written before the new snapshot is downloaded)
+I re-checked every point with my own code and runs before changing anything; the user chose option B (amend now, run both runners).
+Confirmed:
+- End of a snapshot: the file holds finished alerts only (its last timestamp is an end, no record ends later), so alerts still running at the
+  snapshot end are missing and the labels of the last hours can be falsely 0. Main test: the last ~H hours of 8 weeks; a 3-day holdout: up to ~12 of ~215 moments.
+- Holdout intervals: 6-hour blocks inside 3 days miss the variation between days. Fixed protocol models of the old test block, 18 windows of 3 days:
+  Kyiv oblast 1 h dBrier, SD between windows 0.036 against a mean SE of 0.016 from the intervals, the 8-week value inside the interval in 44% of the windows;
+  Poltava 3 h dBrier, interval excludes zero in 4 of 18 windows (22%, nominal 5%). Dry run of the frozen runner on the last 3 seen days: main cell
+  dBrier -0.0353 [-0.0666, -0.0067] -> "better", while the 8-week difference is +0.0004. The frozen design would hand out verdicts on noise.
+- Selection rests on tiny validation differences (Poltava 1 h: 0.2134 vs 0.2147, test PR-AUC 0.299 vs 0.336). The dry run (validation shifted by
+  3 days) picks other models: Poltava 3 h logreg[own+nbr+cty] without Platt with recent_level 3 d as bar B; Kyiv oblast logreg[own+nbr+cty]+platt.
+- Not blind any more: the live forecasts (decisions 13-14) showed eMap answers inside the holdout window, so "the only block nobody has seen"
+  (decision 9) is no longer true. My mistake: I protected the holdout from the volunteer data only.
+- Boosting: by decision 6's criterion the protocol boosting model beats the protocol logistic model at 1 h in Poltava (PR-AUC +0.052 †, Brier -0.0029 †),
+  Lviv (+0.046 †, -0.0032 †) and Kharkiv (PR-AUC +0.018 †), and at 30 min in Poltava (both †) and Lviv (Brier †), at 15 min in Kharkiv (Brier †); never worse.
+  The README sentence "boosting is not demonstrably better" relied on a post-hoc comparison with another logistic variant, and decision 7 wrongly called
+  the criterion "superseded": it compared boosting with logistic regression, not with the baselines. Against the strict baseline reference boosting
+  still shows nothing in Poltava and Lviv.
+- Nine week blocks, the edge ones of 2.9 and 4.3 days: a percentile bootstrap over 9 clusters is too narrow. Approximate correction (intervals x1.25 =
+  t(8)/z x sqrt(9/8), not a rerun): 19 of the 22 strict-reference † cells keep †; lost are Kyiv 15 and 30 min Brier and Kharkiv 15 min logistic PR-AUC.
+- The earlier period 2026-07-04..08-28 shares 6 weeks with the main validation and 2 with the main test: not an independent repetition.
+- README: the figure alt text missed Lviv 15 min (+0.010 †) and Kharkiv 6 h (model worse, †); Lviv official episodes May - Aug 28 are 29, not 30;
+  the Data numbers had no script; "exactly the protocol above" for the holdout was wrong (it compares with bar B; the protocol's claims are against
+  the strict reference); on another machine `bash` may start WSL; without the data pytest skips the real-data tests with no visible note.
+- scripts/run_holdout.py: the snapshot comparison counts alerts running at the old end as "added"; its key is the raw start string; the SHA goes to a
+  git-ignored folder; MIN_CLASS counts moments (one alert at H = 3 h gives up to 12); the new end is not trimmed; an overlap in any oblast stops it;
+  without arguments it crashes; there is no equivalence margin, so the predicted "no gain" could never be confirmed.
+Partly or not confirmed:
+- The Data numbers mostly reproduce exactly (21 of 382, Rivne 27 of 107, 347 and 91%, the western counts); Kharkiv's 386 is in
+  results/kharkivska/robustness.txt. Small shifts: Poltava 0% -> 1%, Kyiv 3% -> 4% outside official episodes, Poltava lead 17% / 64% -> 15% / 63%.
+- "git status shows all 20 results files changed": not reproduced here. .gitattributes (eol=lf) normalizes CRLF (tested with autocrlf=false);
+  only the 8 experiment*.txt files differ, by their run-time stamps.
+- The counts of added records in older snapshots (4, 4, 7) were not checked (that needs old snapshots downloaded).
+
+Amendment to decision 9 (fixed now, before the download). The frozen runner is still run unchanged and reported, labelled
+"pre-registered, known flaws (decision 15)"; the amended one is the analysis I stand behind.
+- Runner: analysis/holdout_amended.py (frozen code imported read-only), tests next to it, committed and tagged `holdout-freeze-2` before the download.
+- Effective end E = new snapshot end - 6 h, the data cut at E as known at E (the longest non-naive alert in the four oblasts over the last 8 weeks
+  lasted 5.6 h; 99% of alerts countrywide end within 3 h). Holdout moments: old end < t <= E - H. Validation, purge, selection, lr_best vs bar B,
+  strict reference as hindsight bound: as in decision 9.
+- Snapshot comparison: starts compared as times; added records split into "running at the old end" (structurally missing, not late) and
+  "finished before the old end" (true late additions, listed one by one); removed and changed as before.
+- Evaluable: at least 5 own alert starts in (old end, E] and at least 10 negative moments.
+- No verdicts. Per cell: the differences with 6-hour-block intervals, labelled "these days only", next to the spread of the same difference over
+  3-day windows of the old test block (fixed protocol models, precomputed now from seen data into results/holdout/reference_spread.csv).
+  Stated in advance: the holdout can neither confirm nor refute the predictions of decision 9; it shows whether the new days look like the old ones.
+- Loading: an overlap inside one oblast is merged with a warning instead of stopping the run.
+- Record: SNAPSHOT.txt (SHA, size, sha256) copied to results/holdout/; the outputs of both runners saved there and committed.
+- Live forecasts keep being written, but no report of their answers is run until the holdout has run.
