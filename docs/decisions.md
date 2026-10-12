@@ -477,3 +477,26 @@ Amendment to decision 9 (fixed now, before the download). The frozen runner is s
   (results/holdout/dryrun_frozen.txt: main cell "better"; dryrun_amended.txt: the same cell without a verdict, its dBrier outside the old windows' middle 90%).
   Limitation of the reference spread: it uses the models the protocol chose on the old test block, while the holdout re-selects (the dry run already
   picks other ones), so it gives the scale of the 3-day noise, not an exact null distribution. Tagged `holdout-freeze-2`.
+
+## 16. Holdout result on the new snapshot (2026-10-12)
+- Snapshot d10c80fa696bab42822b9f05b423fc8a30e79d20 (results/holdout/SNAPSHOT.txt), data end 2026-10-12 04:59:03 UTC. Downloaded after decision 15 and the
+  tag `holdout-freeze-2`; the code was checked to equal both tags before and after the runs, nothing was changed after the download. Live answers were not looked at.
+- Both runners ran without errors: results/holdout/frozen.txt (decision 9, holdout 2026-10-09 05:12 .. 10-12 04:59, 71.8 h) and results/holdout/amended.txt
+  (decision 15, cut at E = 2026-10-11 22:59, 65.8 h). All 11 cells were evaluable (own alert starts: Poltava 24, Kyiv oblast 43, Kharkiv 57, Lviv 25).
+- Snapshot comparison: 5 records started before the old end and were missing from the old file, none removed or changed. Split: 1 was still running at the
+  old end (Kyiv oblast), 4 counted as true late additions (Donetsk, Kherson, Khmelnytskyi, Ternopil, started 0.8-8.5 h before the old end). All 4 have
+  invented ends (naive), so "finished before the old end" rests on start + 30 min; their real ends were never seen. Late additions are few and naive, as the
+  first review said.
+- Primary cell, Poltava 3 h, protocol model logreg[own+nbr+cty] (C=0.001, 365 d; on the main test it was the Platt variant) vs bar B recent_level (30 d):
+  frozen dPR-AUC -0.048 [-0.141, +0.050], dBrier -0.0092 [-0.0220, +0.0030], both "inconclusive"; amended -0.029 and -0.0093, both inside the middle 90% of
+  the old 3-day windows. Consistent with the prediction "no gain", which, as stated in advance, 3 days cannot confirm.
+- Kyiv oblast and Kharkiv, 15 min - 1 h (prediction: gains): 11 of 12 differences point the predicted way in both runners (PR-AUC up, Brier down; the
+  exception is Kharkiv 15 min Brier, +0.0007), e.g. Kyiv 1 h amended dPR-AUC +0.036, dBrier -0.0139. None has an interval excluding zero, all 12 lie
+  inside the old windows' spread, and the 12 share the same days and alerts. Against the best baseline configuration chosen on the holdout itself
+  (hindsight bound) Kyiv shows no gain on these days (dPR-AUC -0.012 .. -0.029), unlike the main test block.
+- Lviv (data warning): the frozen runner's only verdict is "better" for Lviv 15 min PR-AUC (+0.078 [+0.009, +0.176]); the amended runner puts Lviv 15 min
+  and 1 h PR-AUC (+0.091, +0.099) outside the old spread, upwards. 2 of 22 values outside a middle-90% range is what chance gives (expected about 2), and the
+  Lviv series is questionable; no claim is made.
+- Reading: the new days look like ordinary days of the old test block. They neither refute nor confirm the main results. The frozen runner would have
+  produced one verdict ("better", Lviv), the amended one none, as intended.
+- Still open: compare the eMap log with the new snapshot (decision 12) and score the live forecasts against the volunteer answers (decisions 13-14).

@@ -15,7 +15,9 @@ leak-free evaluation, not a big number.
 частково збігається з основними (це не незалежне повторення). Інтервали з 9 тижнів завузькі: за наближеною поправкою частина позначок † зникає (рішення 15).
 **Львівська:** стійкого результату немає, а сам ряд даних під сумнівом. Висновки кілька разів змінювались після перевірок, зокрема після
 двох незалежних рецензій інших агентів; усе описано в [docs/decisions.md](docs/decisions.md). Тест на нових даних заздалегідь зареєстровано (рішення 9)
-і виправлено до завантаження даних (рішення 15); він уже не сліпий і лише описовий (див. нижче).
+і виправлено до завантаження даних (рішення 15). **Результат (рішення 16): нові ~3 дні схожі на звичайні дні старого тесту.** Полтавська 3 год
+узгоджується з «виграшу немає»; у Київській і Харківській 11 з 12 різниць у передбаченому напрямку, але жодна не відрізняється від нуля. Нічого не
+підтверджено і не спростовано: 3 днів замало, і цей тест уже не сліпий.
 
 **Interactive demo:** open [demo/index.html](demo/index.html) in a browser (one self-contained file; download it or clone the repo). It shows one day in Poltava oblast: alerts on a time axis, the forecast moment t, what the model knows before t and what is hidden, the window (t, t+H], and the model's real out-of-sample forecast against the baseline. Built by `python demo/build_demo.py` (decision 11).
 
@@ -126,7 +128,7 @@ Added because at H = 3 h the target is close to saturated (66% of moments in Pol
   in 11% (Poltava: 15% and 63%; `results/data_checks.txt`). On top of that, Lviv's neighbour features rest largely on invented alert ends (see Data). An earlier README sentence ("in the west alerts
   are declared over large areas at once") is not supported by the test-block data and was removed.
 
-## Planned test on new data (Monday 2026-10-12)
+## Test on new data (2026-10-12)
 
 The test block above has been looked at many times; the data after the snapshot is newer. The test was **pre-registered** in decision 9 of `docs/decisions.md`,
 written before downloading: compare the two snapshots for late additions; evaluate the holdout (about 3 days) with the same selection protocol (validation =
@@ -139,7 +141,20 @@ eMap answers for the same days. Amendment, registered before the download (decis
 snapshot is cut 6 h before its end; added records are split into "running at the old end" and true late additions; a cell needs 5 own alert starts;
 **no verdicts**: the differences are shown with "these days only" intervals next to their spread over 3-day windows of the old test block. With about
 3 days the holdout can neither confirm nor refute the predictions. Both runners are run and reported (the frozen one labelled as flawed).
-Result: *to be added on Monday*.
+**Result** (decision 16; snapshot `d10c80f`, data to 2026-10-12 04:59 UTC, about 3 days; `results/holdout/frozen.txt`, `results/holdout/amended.txt`):
+
+| Cell | frozen runner (decision 9) | amended runner (decision 15) |
+|---|---|---|
+| **Poltava 3 h** (primary; prediction: no gain) | dPR-AUC -0.048 [-0.141, +0.050], dBrier -0.0092 [-0.0220, +0.0030]: inconclusive | -0.029 and -0.0093, both inside the usual 3-day spread |
+| Kyiv oblast 15 min / 30 min / 1 h (prediction: gain) | dPR-AUC +0.018 / +0.048 / +0.037, dBrier -0.0011 / -0.0082 / -0.0130: all inconclusive | +0.012 / +0.042 / +0.036, -0.0008 / -0.0084 / -0.0139: all inside |
+| Kharkiv 15 min / 30 min / 1 h (prediction: gain) | dPR-AUC +0.022 / +0.025 / +0.027, dBrier +0.0008 / -0.0025 / -0.0058: all inconclusive | +0.022 / +0.019 / +0.021, +0.0007 / -0.0014 / -0.0071: all inside |
+| Lviv 15 min - 3 h (data warning) | 15 min PR-AUC +0.078 [+0.009, +0.176]: "better"; the rest inconclusive | 15 min and 1 h PR-AUC (+0.091, +0.099) above the usual spread; the rest inside |
+
+- **The new days look like ordinary days of the old test block.** Poltava 3 h agrees with "no gain"; in Kyiv and Kharkiv 11 of 12 differences point the
+  predicted way, but none is distinguishable from zero and they share the same days. Against the best baseline configuration chosen on these days
+  Kyiv shows no gain. 2 of 22 amended values outside the usual spread is what chance gives; the Lviv series is questionable. **Nothing is confirmed or refuted.**
+- **Late additions:** 5 records started before the old end were missing from the old file: 1 was still running then, 4 were added later, all with
+  invented ends. None removed or changed.
 
 ## Task definition
 
@@ -221,8 +236,8 @@ Result: *to be added on Monday*.
 
 - **The test block is not untouched.** Decisions taken after looking at it: the smoothed hour-of-week baseline, the recent-level baseline, the strict reference and its
   three refinements (per metric, per configuration), the choice of Lviv (by test-block alert counts), the 15/30-minute horizons (after seeing the saturation at 3 h),
-  and, until the review, the reported logistic variant. Boosting and the short horizons were run with the question written down before the run. The Monday holdout is
-  the only clean test.
+  and, until the review, the reported logistic variant. Boosting and the short horizons were run with the question written down before the run. The holdout on new data
+  (decisions 9, 15, 16) was the planned clean test, but it is short (about 3 days) and not blind: the live forecasts showed eMap answers for the same days.
 - **Asymmetry against the models.** The recent-level baseline is refit daily, the models weekly, and the models have no multi-day rate feature. For claims of a gain this is
   conservative; for the negative Poltava claim it is **not**: part of "the models do not beat the baseline" may be this handicap.
 - **Intervals**: 9 weekly blocks give coarse and somewhat too narrow intervals (‡ marks the fragile cells); the strict reference is chosen once on the full
