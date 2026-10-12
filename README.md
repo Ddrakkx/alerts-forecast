@@ -19,6 +19,8 @@ leak-free evaluation, not a big number.
 узгоджується з «виграшу немає»; у Київській і Харківській 11 з 12 різниць у передбаченому напрямку, але жодна не відрізняється від нуля. Нічого не
 підтверджено і не спростовано: 3 днів замало, і цей тест уже не сліпий.
 
+**Dialogue with the AI:** the whole working conversation with Claude Code, from the first message to submission, is in [docs/dialogue.md](docs/dialogue.md).
+
 **Live forecasts** (decisions 12-14, illustration only): a logger reads the eMap feed once a minute, and at every all-clear in Poltava, Kyiv oblast,
 Kharkiv and Lviv the protocol models write a forecast for 15 min, 30 min, 1 h and 3 h before the answer is known (`demo/live/`, never edited;
 23 forecasts by the morning of 2026-10-12, with gaps while the computer was off). They are **not scored yet**: the eMap raion data and the volunteer series differ
@@ -306,6 +308,7 @@ run-time stamps (`[78s]`) in the headers of `experiment*.txt`.
 | `results/<oblast>/` | `experiment.txt`, `boosting.txt`, `robustness.txt` (main horizons), `experiment_short.txt`, `boosting_short.txt` (15/30 min) |
 | `results/summary.md` | all headline tables, generated from the files above; `poltavska/experiment_v1_narrow_grid_superseded.txt` is an old, withdrawn run |
 | `docs/decisions.md` | decision log: options, choices, risks, mistakes, retractions, both reviews, the holdout pre-registration and its amendment |
+| `docs/dialogue.md` | full text export of the dialogue with Claude Code (user messages, replies, one line per tool call) |
 | `docs/figures/` | README figures, made by `scripts/make_figures.py` from the data and the saved results |
 | `analysis/holdout_amended.py` | amended holdout runner (decision 15), tests in `analysis/test_holdout_amended.py`; `results/holdout/` holds its reference spread and, after Monday, both holdout outputs and the snapshot SHA |
 | `analysis/data_checks.py` | the numbers of the Data section (`results/data_checks.txt`) |
