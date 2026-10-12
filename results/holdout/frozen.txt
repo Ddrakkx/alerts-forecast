@@ -1,0 +1,69 @@
+Snapshot comparison for alerts that started before 2026-10-09 05:12:41 UTC: added 5, removed 0, changed 0
+  added: Donetska oblast 1, Khersonska oblast 1, Khmelnytska oblast 1, Kyivska oblast 1, Ternopilska oblast 1
+holdout 2026-10-09 05:12 .. 2026-10-12 04:59 UTC (71.8 h); validation 2026-08-14 05:12 .. holdout start - H; bootstrap: 6-hour blocks, 1000 draws, seed 0
+
+[Poltavska oblast, H = 3 h, PRIMARY (pre-registered)] holdout moments 223, positive 181, negative 42, blocks 12
+  protocol model logreg[own+nbr+cty] (C=0.001|365d): PR-AUC 0.796, Brier 0.1622
+  bar B recent_level (|30d): PR-AUC 0.844, Brier 0.1714
+  vs bar B (the pre-registered comparison): dPR-AUC -0.0481 [-0.1414, +0.0504] -> inconclusive | dBrier -0.0092 [-0.0220, +0.0030] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (recent_level||7d / recent_level||3d): dPR-AUC -0.0481 [-0.1414, +0.0504] -> inconclusive | dBrier -0.0014 [-0.0214, +0.0154] -> inconclusive
+
+[Kyivska oblast, H = 0.25 h, secondary (pre-registered)] holdout moments 233, positive 43, negative 190, blocks 13
+  protocol model logreg[own+nbr]+platt (C=0.01|365d): PR-AUC 0.209, Brier 0.1516
+  bar B recent_level (|3d): PR-AUC 0.191, Brier 0.1527
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0175 [-0.0254, +0.1277] -> inconclusive | dBrier -0.0011 [-0.0072, +0.0035] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week||365d / recent_level||7d): dPR-AUC -0.0108 [-0.0971, +0.1153] -> inconclusive | dBrier +0.0004 [-0.0055, +0.0053] -> inconclusive
+
+[Kyivska oblast, H = 0.5 h, secondary (pre-registered)] holdout moments 232, positive 78, negative 154, blocks 13
+  protocol model logreg[own+nbr+cty]+platt (C=0.001|365d): PR-AUC 0.400, Brier 0.2203
+  bar B recent_level (|3d): PR-AUC 0.352, Brier 0.2285
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0482 [-0.0241, +0.1683] -> inconclusive | dBrier -0.0082 [-0.0207, +0.0041] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=100|180d / recent_level||7d): dPR-AUC -0.0100 [-0.1281, +0.1664] -> inconclusive | dBrier -0.0039 [-0.0141, +0.0053] -> inconclusive
+
+[Kyivska oblast, H = 1 h, secondary (pre-registered)] holdout moments 230, positive 127, negative 103, blocks 13
+  protocol model logreg[own+nbr+cty]+platt (C=0.001|365d): PR-AUC 0.607, Brier 0.2444
+  bar B recent_level (|3d): PR-AUC 0.571, Brier 0.2573
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0367 [-0.0695, +0.1407] -> inconclusive | dBrier -0.0130 [-0.0392, +0.0151] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=100|180d / recent_level||7d): dPR-AUC -0.0302 [-0.1460, +0.1146] -> inconclusive | dBrier -0.0041 [-0.0164, +0.0076] -> inconclusive
+
+[Kharkivska oblast, H = 0.25 h, secondary (pre-registered)] holdout moments 223, positive 58, negative 165, blocks 13
+  protocol model logreg[own+nbr] (C=0.01|180d): PR-AUC 0.283, Brier 0.1989
+  bar B hour_of_week_smooth (k=25|180d): PR-AUC 0.262, Brier 0.1981
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0218 [-0.0329, +0.0846] -> inconclusive | dBrier +0.0008 [-0.0084, +0.0086] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=1600|all / recent_level||3d): dPR-AUC -0.0208 [-0.0985, +0.0603] -> inconclusive | dBrier +0.0064 [-0.0034, +0.0167] -> inconclusive
+
+[Kharkivska oblast, H = 0.5 h, secondary (pre-registered)] holdout moments 222, positive 102, negative 120, blocks 13
+  protocol model logreg[own+nbr+cty] (C=0.1|180d): PR-AUC 0.518, Brier 0.2555
+  bar B hour_of_week_smooth (k=25|180d): PR-AUC 0.492, Brier 0.2580
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0254 [-0.0656, +0.0929] -> inconclusive | dBrier -0.0025 [-0.0217, +0.0138] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=100|all / recent_level||3d): dPR-AUC -0.0419 [-0.1596, +0.0830] -> inconclusive | dBrier +0.0066 [-0.0139, +0.0274] -> inconclusive
+
+[Kharkivska oblast, H = 1 h, secondary (pre-registered)] holdout moments 220, positive 155, negative 65, blocks 13
+  protocol model logreg[own+nbr+cty] (C=0.01|180d): PR-AUC 0.744, Brier 0.2150
+  bar B hour_of_week_smooth (k=100|180d): PR-AUC 0.717, Brier 0.2209
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0273 [-0.0246, +0.0713] -> inconclusive | dBrier -0.0058 [-0.0233, +0.0100] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=1600|90d / recent_level||7d): dPR-AUC +0.0020 [-0.0977, +0.0592] -> inconclusive | dBrier +0.0066 [-0.0154, +0.0282] -> inconclusive
+
+[Lvivska oblast, H = 0.25 h, reported with the data warning] holdout moments 253, positive 25, negative 228, blocks 13
+  protocol model logreg[own] (C=0.01|180d): PR-AUC 0.171, Brier 0.0913
+  bar B recent_level (|3d): PR-AUC 0.094, Brier 0.0917
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0775 [+0.0094, +0.1764] -> better | dBrier -0.0004 [-0.0015, +0.0006] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=100|365d / recent_activity||90d): dPR-AUC +0.0160 [-0.0833, +0.1411] -> inconclusive | dBrier -0.0002 [-0.0011, +0.0005] -> inconclusive
+
+[Lvivska oblast, H = 0.5 h, reported with the data warning] holdout moments 252, positive 46, negative 206, blocks 13
+  protocol model logreg[own] (C=0.01|180d): PR-AUC 0.234, Brier 0.1574
+  bar B recent_level (|3d): PR-AUC 0.175, Brier 0.1574
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0590 [-0.0061, +0.1497] -> inconclusive | dBrier -0.0000 [-0.0035, +0.0031] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=1600|365d / recent_activity||90d): dPR-AUC -0.0259 [-0.1457, +0.1051] -> inconclusive | dBrier +0.0004 [-0.0034, +0.0043] -> inconclusive
+
+[Lvivska oblast, H = 1 h, reported with the data warning] holdout moments 250, positive 82, negative 168, blocks 13
+  protocol model logreg[own] (C=0.01|180d): PR-AUC 0.389, Brier 0.2457
+  bar B recent_level (|3d): PR-AUC 0.318, Brier 0.2454
+  vs bar B (the pre-registered comparison): dPR-AUC +0.0706 [-0.0438, +0.1987] -> inconclusive | dBrier +0.0002 [-0.0104, +0.0099] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week_smooth|k=400|365d / recent_activity||90d): dPR-AUC -0.0781 [-0.3258, +0.1473] -> inconclusive | dBrier +0.0029 [-0.0083, +0.0158] -> inconclusive
+
+[Lvivska oblast, H = 3 h, reported with the data warning] holdout moments 242, positive 156, negative 86, blocks 12
+  protocol model logreg[own] (C=0.1|365d): PR-AUC 0.639, Brier 0.2783
+  bar B recent_level (|3d): PR-AUC 0.677, Brier 0.2790
+  vs bar B (the pre-registered comparison): dPR-AUC -0.0376 [-0.1739, +0.0956] -> inconclusive | dBrier -0.0007 [-0.0363, +0.0327] -> inconclusive
+  hindsight bound vs best baseline configuration on the holdout (hour_of_week||365d / recent_activity||90d): dPR-AUC -0.1304 [-0.3047, +0.0937] -> inconclusive | dBrier +0.0050 [-0.0322, +0.0382] -> inconclusive
