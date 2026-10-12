@@ -19,6 +19,11 @@ leak-free evaluation, not a big number.
 узгоджується з «виграшу немає»; у Київській і Харківській 11 з 12 різниць у передбаченому напрямку, але жодна не відрізняється від нуля. Нічого не
 підтверджено і не спростовано: 3 днів замало, і цей тест уже не сліпий.
 
+**Live forecasts** (decisions 12-14, illustration only): a logger reads the eMap feed once a minute, and at every all-clear in Poltava, Kyiv oblast,
+Kharkiv and Lviv the protocol models write a forecast for 15 min, 30 min, 1 h and 3 h before the answer is known (`demo/live/`, never edited;
+23 forecasts by the morning of 2026-10-12, with gaps while the computer was off). They are **not scored yet**: the eMap raion data and the volunteer series differ
+a lot (an oblast is "under alert" in eMap 59-93% of the time against 12-23% in the volunteer data), and the volunteer answers are checked only after the holdout.
+
 **Interactive demo:** open [demo/index.html](demo/index.html) in a browser (one self-contained file; download it or clone the repo). It shows one day in Poltava oblast: alerts on a time axis, the forecast moment t, what the model knows before t and what is hidden, the window (t, t+H], and the model's real out-of-sample forecast against the baseline. Built by `python demo/build_demo.py` (decision 11).
 
 ## Main results
@@ -274,7 +279,7 @@ python analysis/data_checks.py > results/data_checks.txt   # numbers of the Data
 python -m pytest analysis/ demo/                 # tests of the amended holdout runner and the demo
 ```
 
-The Monday holdout (decision 15):
+The holdout on new data (decisions 15-16), as run on 2026-10-12:
 
 ```bash
 python scripts/download_data.py --new-snapshot
@@ -305,7 +310,8 @@ run-time stamps (`[78s]`) in the headers of `experiment*.txt`.
 | `analysis/holdout_amended.py` | amended holdout runner (decision 15), tests in `analysis/test_holdout_amended.py`; `results/holdout/` holds its reference spread and, after Monday, both holdout outputs and the snapshot SHA |
 | `analysis/data_checks.py` | the numbers of the Data section (`results/data_checks.txt`) |
 | `analysis/weekend_check.py` | side check of the claim "fewer alerts at weekends" (`results/weekend_check.txt`; frozen code imported read-only) |
-| `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only); live eMap logger (`emap_logger.py`) |
+| `demo/` | interactive page (`index.html`, built from `template.html` by `build_demo.py`; frozen code imported read-only); live eMap logger (`emap_logger.py`); live forecaster (`live_forecast.py`, one process per oblast, `--report` for answers) |
+| `demo/live/` | live forecast records per oblast (`forecasts.jsonl`, never edited; Poltava in the folder itself, others in `kyivska/`, `kharkivska/`, `lvivska/`) |
 
 ## License
 
