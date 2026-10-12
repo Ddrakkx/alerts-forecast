@@ -193,6 +193,7 @@ snapshot is cut 6 h before its end; added records are split into "running at the
   not the quietest one, as an earlier README wrongly said.
 - **Late additions**: according to the external review, earlier snapshots miss 1-2 alerts that were added later (up to 14 days late, all naive). Not verified on old snapshots.
   A snapshot never holds alerts still running at its end, so their absence is not "late"; the amended holdout comparison separates the two (decision 15).
+  Checked on the new snapshot (decision 16): 1 alert was running at the old end, 4 were added later (started 0.8-8.5 h before the old end, all naive).
 - Luhansk oblast is excluded from country-wide counts (permanent siren, not a series). Crimea is not in the data.
 - **Alert levels (yellow / red)**: since about September 2026 Ukraine announces two levels (yellow = drone raid, red = missile or massed attack; decision 12). Neither of our files has a level, so after that date the target mixes both kinds of alert in a way we cannot separate. A live logger of the eMap feed (`demo/emap_logger.py`, one request per minute) collects levels for a later comparison.
 - Raw data is not stored in the repository: `python scripts/download_data.py`.
